@@ -1,0 +1,29 @@
+{
+  "enabled": false,
+  "baseUrl": "http://localhost:8080/api",
+  "modules": {
+    "note": true,
+    "trip": true,
+    "place": true,
+    "user": false,
+    "ai": true,
+    "map": true
+  },
+  "banners": [
+    { "id": 1, "imageSrc": "https://example.com/banner1.jpg", "title": "瑞士阿尔卑斯山" },
+    { "id": 2, "imageSrc": "https://example.com/banner2.jpg", "title": "马尔代夫群岛" }
+  ],
+  "sampleTrips": [
+    {
+      "id": 1,
+      "name": "示例行程 (测试数据)",
+      "location": "巴黎",
+      "status": "planning",
+      "startDate": "2026-04-01",
+      "endDate": "2026-04-05"
+    }
+  ],
+  "notifications": [
+    { "id": 1, "title": "系统通知", "content": "欢迎使用旅游攻略助手！", "time": "10:00", "isRead": false }
+  ]
+}
