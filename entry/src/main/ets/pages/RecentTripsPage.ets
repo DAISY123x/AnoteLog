@@ -1,14 +1,9 @@
 import router from '@ohos.router';
 import { RdbManager } from '../common/database/RdbManager';
-import { Trip, TripPlace } from '../model/TripModel';
+import { Trip, TripPlace, TripViewModel } from '../model/TripModel';
 import { promptAction, AlertDialog } from '@kit.ArkUI';
 import { CreateTripDialog } from '../view/CreateTripDialog';
-
-interface TripViewModel extends Trip {
-  places: TripPlace[];
-  startPoint: string;
-  endPoint: string;
-}
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -73,8 +68,9 @@ struct RecentTripsPage {
         params: { trip: trip }
       });
     } catch (e) {
+      Logger.error('RecentTripsPage', 'Create trip failed');
+    } catch (e) {
       console.error('Create trip failed', e);
-      promptAction.showToast({ message: '创建失败' });
     }
   }
 
@@ -101,8 +97,9 @@ struct RecentTripsPage {
       }
       this.trips = await this.enrichTrips(trips);
     } catch (e) {
+      Logger.error('RecentTripsPage', 'Refresh trips failed');
+    } catch (e) {
       console.error('Refresh trips failed', e);
-      promptAction.showToast({ message: '刷新失败' });
     } finally {
       this.isRefreshing = false;
       this.isLoading = false;
@@ -122,6 +119,8 @@ struct RecentTripsPage {
       const enriched = await this.enrichTrips(newTrips);
       this.trips = this.trips.concat(enriched);
     } catch (e) {
+      Logger.error('RecentTripsPage', 'Load more trips failed');
+    } catch (e) {
       console.error('Load more trips failed', e);
       this.currentPage--;
     } finally {
@@ -136,6 +135,8 @@ struct RecentTripsPage {
        if (trip.id) {
          try {
            places = await RdbManager.getInstance().getTripPlaces(trip.id);
+         } catch (e) {
+           Logger.error('RecentTripsPage', `Failed to load places for trip ${trip.id}`);
          } catch (e) {
            console.error(`Failed to load places for trip ${trip.id}`, e);
          }
@@ -176,7 +177,7 @@ struct RecentTripsPage {
         }
       });
     } catch (e) {
-      console.error('Delete trip failed', e);
+      Logger.error('RecentTripsPage', 'Delete trip failed');
     }
   }
 
@@ -203,8 +204,9 @@ struct RecentTripsPage {
       promptAction.showToast({ message: '已标记为完成' });
       this.refreshData();
     } catch (e) {
+      Logger.error('RecentTripsPage', 'Mark trip completed failed');
+    } catch (e) {
       console.error('Mark trip completed failed', e);
-      promptAction.showToast({ message: '操作失败' });
     }
   }
 

@@ -2,6 +2,7 @@ import http from '@ohos.net.http';
 import { BusinessError } from '@ohos.base';
 import preferences from '@ohos.data.preferences';
 import common from '@ohos.app.ability.common';
+import { Logger } from '../utils/Logger';
 
 export interface AIRecommendation {
   id: number;
@@ -61,6 +62,7 @@ export class AIService {
     try {
       this.pref = await preferences.getPreferences(context, 'ai_cache_store');
     } catch (e) {
+      Logger.error('AIService', 'Failed to get preferences');
       console.error('AIService: Failed to get preferences', e);
     }
   }
@@ -72,8 +74,10 @@ export class AIService {
         const req = this.activeRequests.get(placeName);
         req?.destroy();
         this.activeRequests.delete(placeName);
+        Logger.info('AIService', `Cancelled request for ${placeName}`);
         console.info(`AIService: Cancelled request for ${placeName}`);
       } catch (e) {
+        Logger.error('AIService', 'Cancel failed');
         console.error('AIService: Cancel failed', e);
       }
     }
@@ -118,12 +122,15 @@ export class AIService {
         }
         return '';
       } else {
+        Logger.error('AIService', `Error Code: ${response.responseCode}`);
         console.error('AI Service Error Code:', response.responseCode);
+        Logger.error('AIService', `Error Body: ${JSON.stringify(response.result)}`);
         console.error('AI Service Error Body:', JSON.stringify(response.result));
         return '';
       }
     } catch (err) {
       const error = err as BusinessError;
+      Logger.error('AIService', `Request Failed: ${error.message}`);
       console.error('AI Service Request Failed:', error.message);
       return '';
     } finally {
@@ -141,9 +148,11 @@ export class AIService {
     if (this.memoryCache.has(placeName)) {
       const detail = this.memoryCache.get(placeName) as AttractionDetail;
       if (detail._cacheTime && (now - detail._cacheTime < this.CACHE_TTL)) {
+        Logger.info('AIService', 'Hit Memory Cache for');
         console.info('AIService: Hit Memory Cache for', placeName);
         return detail;
       } else {
+        Logger.info('AIService', 'Memory Cache expired for');
         console.info('AIService: Memory Cache expired for', placeName);
         this.memoryCache.delete(placeName);
       }
@@ -156,14 +165,17 @@ export class AIService {
         if (cachedStr) {
           const detail = JSON.parse(cachedStr) as AttractionDetail;
           if (detail._cacheTime && (now - detail._cacheTime < this.CACHE_TTL)) {
+            Logger.info('AIService', 'Hit Local Cache for');
             console.info('AIService: Hit Local Cache for', placeName);
             this.memoryCache.set(placeName, detail); // Update memory
             return detail;
           } else {
+            Logger.info('AIService', 'Local Cache expired for');
             console.info('AIService: Local Cache expired for', placeName);
           }
         }
       } catch (e) {
+        Logger.error('AIService', 'Local cache read failed');
         console.error('AIService: Local cache read failed', e);
       }
     }
@@ -212,12 +224,14 @@ export class AIService {
             return detail;
         }
       } catch (e) {
+        Logger.error('AIService', `Retry ${retryCount + 1} failed for ${placeName}`);
         console.error(`AIService: Retry ${retryCount + 1} failed for ${placeName}`, e);
       }
       retryCount++;
     }
 
     // 4. Fallback Mock Data
+    Logger.warn('AIService', 'All retries failed, returning mock data');
     console.warn('AIService: All retries failed, returning mock data.');
     return this.getMockData(placeName);
   }
@@ -246,6 +260,7 @@ export class AIService {
         const jsonStr = rawData.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr) as string[];
       } catch (e) {
+        Logger.error('AIService', `JSON Parse Error: ${e}`);
         console.error('JSON Parse Error', e);
       }
     }

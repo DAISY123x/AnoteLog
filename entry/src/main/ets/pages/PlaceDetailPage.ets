@@ -6,6 +6,7 @@ import { promptAction } from '@kit.ArkUI';
 import vibrator from '@ohos.vibrator';
 import { AIService, AttractionDetail } from '../service/AIService';
 import mediaquery from '@ohos.mediaquery';
+import { Logger } from '../utils/Logger';
 
 // 定义路由参数接口
 export interface PlaceDetailParams {
@@ -159,6 +160,7 @@ struct PlaceDetailPage {
             }
         }
     } catch (e) {
+        Logger.error('PlaceDetailPage', `Preload failed for ${title}`);
         console.error(`Preload failed for ${title}`, e);
     } finally {
         this.pendingRequests.delete(title);
@@ -275,6 +277,8 @@ struct PlaceCard {
     try {
       this.isLiked = await RdbManager.getInstance().isLiked(this.place.id, 'place');
     } catch (e) {
+      Logger.error('PlaceCard', 'Check like status failed');
+    } catch (e) {
       console.error('Check like status failed', e);
     }
   }
@@ -298,7 +302,7 @@ struct PlaceCard {
         }
       }
     } catch (e) {
-      console.error('Toggle like failed', e);
+      Logger.error('PlaceCard', 'Toggle like failed');
     }
   }
 

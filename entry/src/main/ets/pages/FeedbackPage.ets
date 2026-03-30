@@ -2,6 +2,7 @@ import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { MyServiceWrapper } from '../service/MyServiceWrapper';
 import { RouterManager } from '../common/utils/RouterManager';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -18,14 +19,15 @@ struct FeedbackPage {
 
     this.isSubmitting = true;
     try {
-      // MOCK ACTION - Database operations removed for navigation testing
+      // @deprecated: 待接入后端后启用真实数据库调用
       // await MyServiceWrapper.getInstance().submitFeedback(this.content, this.contact);
-      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000)); // TODO: 替换为真实调用
       promptAction.showToast({ message: '感谢您的反馈！' });
       setTimeout(() => {
         router.back();
       }, 1000);
     } catch (e) {
+      Logger.error('FeedbackPage', 'Submit feedback failed', e);
       console.error('Submit feedback failed', e);
       promptAction.showToast({ message: '提交失败，请稍后重试' });
       this.isSubmitting = false;

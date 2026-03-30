@@ -5,38 +5,13 @@ import { CreateTripDialog } from '../view/CreateTripDialog';
 import { RdbManager } from '../common/database/RdbManager';
 import { Trip } from '../model/TripModel';
 import { PlaceDetailParams } from './PlaceDetailPage';
-
-// 定义数据模型
-interface BannerItem {
-  id: number;
-  imageSrc: string;
-  title: string;
-}
-
-interface FunctionalCardItem {
-  id: number;
-  title: string;
-  icon: ResourceStr;
-  colors: [ResourceColor, number][];
-  shadowColor: string;
-}
-
-interface UserTripItem {
-  id: number;
-  userName: string;
-  userAvatar: string;
-  imageSrc: string;
-  title: string;
-  date: string;
-  location: string;
-  likes: number;
-}
+import { BannerItem, FunctionalCardItem, UserTripItem } from '../common/types/CommonTypes';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
 struct Index {
   @State currentIndex: number = 0;
-  // 使用 StorageLink 实现跨页面状态共享
   @StorageLink('isLogin') isLogin: boolean = false;
   dialogController: CustomDialogController = new CustomDialogController({
     builder: CreateTripDialog({
@@ -61,18 +36,19 @@ struct Index {
       };
       const newTripId = await RdbManager.getInstance().insertTrip(trip);
       promptAction.showToast({ message: '行程创建成功' });
-      // Navigate to NewTripPage for creation flow
       router.pushUrl({
         url: 'pages/NewTripPage'
       });
 
     } catch (e) {
+      Logger.error('Index', 'Create trip failed', e);
       console.error('Create trip failed', e);
       promptAction.showToast({ message: '创建失败' });
     }
   }
 
-  // 必玩推荐景点 (轮播图)
+  // @deprecated: 首页推荐数据应从后端API获取，参见 TripService.getRecommendedTrips()
+  // @see resources/rawfile/mock-config.json banners[]
   @State banners: BannerItem[] = [
     {
       id: 1,
@@ -90,13 +66,13 @@ struct Index {
       title: '意大利五渔村'
     }
   ];
+
   // 四大功能模块 - 青春活力配色
   @State functionalCards: FunctionalCardItem[] = [
     {
       id: 1,
       title: '新建行程',
       icon: $r('app.media.ic_func_new_trip'),
-      // 鲜艳的蓝青渐变
       colors: [[0x4FACFE, 0.0], [0x00F2FE, 1.0]],
       shadowColor: 'rgba(79, 117, 254, 0.40)'
     },
@@ -104,7 +80,6 @@ struct Index {
       id: 2,
       title: '新建笔记',
       icon: $r('app.media.ic_func_notes'),
-      // 温暖的橙红渐变
       colors: [[0xFFA07A, 0.0], [0xFF6B6B, 1.0]],
       shadowColor: 'rgba(255, 107, 107, 0.4)'
     },
@@ -112,7 +87,6 @@ struct Index {
       id: 3,
       title: '旅游建议',
       icon: $r('app.media.ic_func_advice'),
-      // 梦幻的紫粉渐变
       colors: [[0x667eea, 0.0], [0x764ba2, 1.0]],
       shadowColor: 'rgba(118, 75, 162, 0.4)'
     },
@@ -120,12 +94,13 @@ struct Index {
       id: 4,
       title: '最近行程',
       icon: $r('app.media.ic_func_recent'),
-      // 清新的绿青渐变
       colors: [[0x43e97b as ResourceColor, 0.0], [0x38f9d7 as ResourceColor, 1.0]],
       shadowColor: 'rgba(56, 249, 215, 0.4)'
     }
   ];
-  // 用户行程推荐列表
+
+  // @deprecated: 用户推荐列表应从后端API获取
+  // @see resources/rawfile/mock-config.json sampleTrips[]
   @State userTrips: UserTripItem[] = [
     {
       id: 1,
@@ -169,7 +144,6 @@ struct Index {
     .scale({ x: 1, y: 1 })
   }
 
-  // TabBuilder
   @Builder
   TabBuilder(title: string, index: number, selectedImg: ResourceStr, normalImg: ResourceStr) {
     Column() {
@@ -190,29 +164,20 @@ struct Index {
 
   build() {
     Tabs({ barPosition: BarPosition.End }) {
-      // 首页 Tab
       TabContent() {
         Column() {
-          // 1. 顶部状态栏区域 (Search + Login)
           this.TopBar()
 
           Scroll() {
             Column() {
-              // 2. 必玩推荐 (Banner)
               this.BannerView()
-
-              // 3. 核心功能 (四宫格)
               this.FeatureGrid()
-
-              // 4. 推荐列表标题
               Text('发现精彩行程')
                 .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor($r('app.color.text_primary'))
                 .width('100%')
                 .padding({ left: 20, top: 30, bottom: 16 })
-
-              // 5. 推荐列表 (用户行程)
               this.TripFeed()
             }
             .width('100%')
@@ -227,7 +192,6 @@ struct Index {
       }
       .tabBar(this.TabBuilder('首页', 0, $r('app.media.ic_home_selected'), $r('app.media.ic_home_normal')))
 
-      // 我的 Tab
       TabContent() {
         MineComponent()
       }
@@ -242,7 +206,6 @@ struct Index {
   @Builder
   TopBar() {
     Row() {
-      // 搜索按钮 - 胶囊样式
       Row() {
         Image($r('app.media.ic_search'))
           .width(18)
@@ -254,7 +217,7 @@ struct Index {
           .fontColor($r('app.color.text_tertiary'))
       }
       .height(40)
-      .layoutWeight(1) // 占据剩余空间
+      .layoutWeight(1)
       .backgroundColor($r('app.color.search_bg'))
       .border({ width: 1, color: $r('app.color.search_border') })
       .borderRadius(20)
@@ -264,7 +227,6 @@ struct Index {
         router.pushUrl({ url: 'pages/SearchPage' });
       })
 
-      // 登录/注册按钮
       if (!this.isLogin) {
         Button('登录 / 注册')
           .height(36)
@@ -275,7 +237,6 @@ struct Index {
           .borderRadius(18)
           .margin({ left: 16 })
           .onClick(() => {
-            // 跳转到登录页
             router.pushUrl({ url: 'pages/LoginPage' });
           })
           .shadow({ radius: 8, color: 'rgba(0, 125, 255, 0.3)', offsetY: 2 })
@@ -288,7 +249,7 @@ struct Index {
           .border({ width: 2, color: Color.White })
           .shadow({ radius: 8, color: 'rgba(0,0,0,0.1)', offsetY: 2 })
           .onClick(() => {
-            this.currentIndex = 1; // 跳转到我的 Tab
+            this.currentIndex = 1;
           })
       }
     }
@@ -322,7 +283,6 @@ struct Index {
               .backgroundColor('#E0E0E0')
               .alt($r('app.media.ic_placeholder'))
 
-            // 渐变遮罩
             Column()
               .width('100%')
               .height('50%')
@@ -344,7 +304,6 @@ struct Index {
           .padding({ left: 20, right: 20 })
           .shadow({ radius: 12, color: 'rgba(0,0,0,0.1)', offsetY: 4 })
           .onClick(() => {
-            // Construct Place List from Banners
             const placeList = this.banners.map((b, idx) => ({
               id: b.id,
               title: b.title,
@@ -416,7 +375,6 @@ struct Index {
         ForEach(this.functionalCards, (item: FunctionalCardItem) => {
           GridItem() {
             Stack({ alignContent: Alignment.TopStart }) {
-              // 1. 背景层
               Column()
                 .width('100%')
                 .height('100%')
@@ -424,23 +382,19 @@ struct Index {
                 .borderRadius(20)
                 .shadow({ radius: 10, color: item.shadowColor, offsetY: 6 })
 
-              // 2. 装饰图案 (大圆环)
               Circle()
                 .width(100)
                 .height(100)
                 .fill('rgba(255,255,255,0.1)')
                 .position({ x: -30, y: -30 })
 
-              // 3. 装饰图案 (小圆点)
               Circle()
                 .width(20)
                 .height(20)
                 .fill('rgba(255,255,255,0.2)')
                 .position({ x: '80%', y: '70%' })
 
-              // 4. 内容层
               Column() {
-                // 图标容器
                 Column() {
                   Image(item.icon)
                     .width(32)
@@ -469,20 +423,20 @@ struct Index {
               .alignItems(HorizontalAlign.Start)
             }
             .width('100%')
-            .height(140) // 增加高度
+            .height(140)
             .stateStyles({
               pressed: this.cardPressed,
               normal: this.cardNormal
             })
             .animation({ duration: 200 })
             .onClick(() => {
-              if (item.id === 1) { // 新建行程
+              if (item.id === 1) {
                 this.dialogController.open();
-              } else if (item.id === 2) { // 旅游笔记
+              } else if (item.id === 2) {
                 router.pushUrl({ url: 'pages/NoteListPage' });
-              } else if (item.id === 3) { // 旅游建议
+              } else if (item.id === 3) {
                 router.pushUrl({ url: 'pages/AdvicePage' });
-              } else if (item.id === 4) { // 最近行程
+              } else if (item.id === 4) {
                 router.pushUrl({ url: 'pages/RecentTripsPage' });
               } else {
                 promptAction.showToast({ message: item.title + ' 功能开发中' });
@@ -495,7 +449,7 @@ struct Index {
       .rowsTemplate('1fr 1fr')
       .columnsGap(16)
       .rowsGap(16)
-      .height(296) // 140*2 + 16 gap
+      .height(296)
       .padding({ left: 20, right: 20 })
     }
   }
@@ -506,7 +460,6 @@ struct Index {
       ForEach(this.userTrips, (item: UserTripItem) => {
         ListItem() {
           Column() {
-            // 大图
             Image(item.imageSrc)
               .width('100%')
               .height(200)
@@ -515,7 +468,6 @@ struct Index {
               .backgroundColor('#E0E0E0')
               .alt($r('app.media.ic_placeholder'))
 
-            // 内容区
             Column() {
               Text(item.title)
                 .fontSize(18)
@@ -543,7 +495,6 @@ struct Index {
               .width('100%')
               .margin({ top: 8, bottom: 16 })
 
-              // 底部用户信息栏
               Row() {
                 Image(item.userAvatar)
                   .width(32)
@@ -586,7 +537,6 @@ struct Index {
           }
           .shadow({ radius: 12, color: 'rgba(0,0,0,0.06)', offsetY: 4 })
           .onClick(() => {
-            // Construct Place List from UserTrips
             const placeList = this.userTrips.map((t) => ({
               id: t.id,
               title: t.title,

@@ -1,5 +1,6 @@
 import { site, navi, mapCommon } from '@kit.MapKit';
 import { AsyncCallback, BusinessError } from '@kit.BasicServicesKit';
+import { Logger } from '../utils/Logger';
 
 export interface Location {
   latitude: number;
@@ -72,11 +73,14 @@ export class MapService {
     };
 
     try {
+      Logger.info('MapService', `Searching for: ${query}`);
       console.info(`[MapService] Searching for: ${query} with params: ${JSON.stringify(params)}`);
       const result = await site.searchByText(params);
+      Logger.info('MapService', `Raw searchByText result: ${JSON.stringify(result)}`);
       console.info(`[MapService] Raw searchByText result: ${JSON.stringify(result)}`);
 
       if (result && result.sites) {
+        Logger.info('MapService', `Search found ${result.sites.length} results`);
         console.info(`[MapService] Search found ${result.sites.length} results`);
         return result.sites.map((s: site.Site) => {
           // Clean up icon string: remove backticks and whitespace
@@ -104,13 +108,16 @@ export class MapService {
           return result;
         });
       }
+      Logger.warn('MapService', 'Search returned no results');
       console.warn(`[MapService] Search returned no results`);
       return [];
     } catch (err) {
       const errorStr = JSON.stringify(err);
+      Logger.error('MapService', `Search failed: ${errorStr}`);
       console.error(`[MapService] Search failed: ${errorStr}`);
       // Fallback to geocode if searchByText fails (e.g. strict address)
       if (query.length > 0) {
+        Logger.info('MapService', 'Falling back to geocode');
         console.info('[MapService] Falling back to geocode');
         return this.geocode(query);
       }
@@ -149,6 +156,7 @@ export class MapService {
           return result;
         });
       }
+      Logger.error('MapService', `Geocode fallback failed: ${JSON.stringify(e)}`);
       return [];
     } catch (e) {
       console.error('Geocode fallback failed', JSON.stringify(e));
@@ -202,6 +210,7 @@ export class MapService {
       }
       return [];
     } catch (err) {
+      Logger.error('MapService', `Nearby search failed: ${JSON.stringify(err)}`);
       console.error('MapService nearby search failed', JSON.stringify(err));
       throw new Error(JSON.stringify(err));
     }
@@ -225,6 +234,7 @@ export class MapService {
     };
 
     try {
+      Logger.info('MapService', 'Planning driving route...');
       console.info('[MapService] Planning driving route...');
       const result = await navi.getDrivingRoutes(params);
       if (result && result.routes && result.routes.length > 0) {
@@ -253,6 +263,7 @@ export class MapService {
             }
           }
         }
+        Logger.info('MapService', `Route planned with ${points.length} points`);
         console.info(`[MapService] Route planned with ${points.length} points`);
         return {
           points: points,
@@ -260,9 +271,11 @@ export class MapService {
           duration: (route as Route).duration || 0
         };
       }
+      Logger.warn('MapService', 'No routes found');
       console.warn('[MapService] No routes found');
       return null;
     } catch (err) {
+      Logger.error('MapService', `planDrivingRoute failed: ${JSON.stringify(err)}`);
       console.error('[MapService] planDrivingRoute failed', JSON.stringify(err));
       // throw new Error(JSON.stringify(err));
       return null;

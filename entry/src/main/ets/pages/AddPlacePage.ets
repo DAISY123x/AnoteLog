@@ -1,6 +1,7 @@
 import router from '@ohos.router';
 import { PlaceService } from '../service/PlaceService';
 import promptAction from '@ohos.promptAction';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -43,8 +44,9 @@ struct AddPlacePage {
         this.contact = place.contact;
       }
     } catch (e) {
+      Logger.error('AddPlacePage', 'Load place failed');
+    } catch (e) {
       console.error('Load place failed', e);
-      promptAction.showToast({ message: '加载数据失败' });
     }
   }
 

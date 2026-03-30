@@ -32,3 +32,12 @@ export interface TripPlace {
 export interface TripWithPlaces extends Trip {
   places: TripPlace[];
 }
+
+/**
+ * 行程卡片视图模型（用于 PendingTripsPage / RecentTripsPage）
+ */
+export interface TripViewModel extends Trip {
+  places: TripPlace[];
+  startPoint: string;
+  endPoint: string;
+}

@@ -3,6 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { authentication } from '@kit.AccountKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { util } from '@kit.ArkTS';
+import { Logger } from '../utils/Logger';
 
 import { AuthService } from '../service/AuthService';
 
@@ -28,7 +29,7 @@ struct LoginPage {
       controller.executeRequest(request).then((response: authentication.AuthenticationResponse) => {
         let credential = response as HuaweiIDCredential;
         // 登录成功
-        console.info('Huawei ID Login Success:', JSON.stringify(credential));
+        Logger.info('LoginPage', 'Huawei ID Login Success');
         promptAction.showToast({ message: `欢迎回来，${credential.nickName || '用户'}` });
 
         // 保存用户信息
@@ -43,7 +44,7 @@ struct LoginPage {
         promptAction.showToast({ message: '登录失败，请重试' });
       });
     } catch (err) {
-      console.error('Huawei ID Login Exception:', JSON.stringify(err));
+      Logger.error('LoginPage', `Huawei ID Login Exception: ${JSON.stringify(err)}`);
     }
   }
 

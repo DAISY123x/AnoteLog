@@ -2,6 +2,7 @@ import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { CloudServiceAdapter } from '../../service/CloudServiceAdapter';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { Logger } from './Logger';
 
 // 路由错误接口定义
 interface RouterError {
@@ -33,16 +34,19 @@ export class RouterManager {
    */
   public async push(url: string, params?: Record<string, Object>): Promise<void> {
     try {
+      Logger.info('RouterManager', `Attempting to push to: ${url}`);
       console.info(`[RouterManager] Attempting to push to: ${url}`);
 
       // 1. 简单的权限/状态检查 (可扩展)
       if (!this.checkCanNavigate(url)) {
+        Logger.warn('RouterManager', `Navigation blocked for: ${url}`);
         console.warn(`[RouterManager] Navigation blocked for: ${url}`);
         return;
       }
 
       // 2. 记录跳转行为
       CloudServiceAdapter.getInstance().logUserAction('navigation_push', url).catch((e: Error) => {
+        Logger.warn('RouterManager', `Log action failed: ${e}`);
         console.warn('[RouterManager] Log action failed', e);
       });
 
@@ -64,12 +68,14 @@ export class RouterManager {
    */
   public async replace(url: string, params?: Record<string, Object>): Promise<void> {
     try {
+      Logger.info('RouterManager', `Attempting to replace with: ${url}`);
       console.info(`[RouterManager] Attempting to replace with: ${url}`);
 
       if (!this.checkCanNavigate(url)) {
         return;
       }
       CloudServiceAdapter.getInstance().logUserAction('navigation_replace', url).catch((e: Error) => {
+        Logger.warn('RouterManager', `Log action failed: ${e}`);
         console.warn('[RouterManager] Log action failed', e);
       });
 
@@ -88,6 +94,7 @@ export class RouterManager {
    */
   public back(url?: string, params?: Record<string, Object>): void {
     try {
+      Logger.info('RouterManager', 'Back');
       console.info(`[RouterManager] Back`);
       if (url) {
         router.back({ url: url, params: params });
@@ -95,6 +102,7 @@ export class RouterManager {
         router.back();
       }
     } catch (err) {
+      Logger.error('RouterManager', `Back failed: ${JSON.stringify(err)}`);
       console.error(`[RouterManager] Back failed:`, err);
     }
   }
@@ -108,6 +116,7 @@ export class RouterManager {
   }
 
   private handleError(err: BusinessError, url: string): void {
+    Logger.error('RouterManager', `Navigation error to ${url}: ${JSON.stringify(err)}`);
     console.error(`[RouterManager] Navigation error to ${url}:`, JSON.stringify(err));
     let message = '页面跳转失败';
     if (err.code === 100002) {

@@ -3,6 +3,7 @@ import { util } from '@kit.ArkTS';
 import preferences from '@ohos.data.preferences';
 import { BusinessError } from '@kit.BasicServicesKit';
 import common from '@ohos.app.ability.common';
+import { Logger } from '../utils/Logger';
 
 export interface UserInfo {
   username: string;
@@ -47,6 +48,7 @@ export class AuthService {
         });
       }
     } catch (err) {
+      Logger.error('AuthService', `Failed to get preferences: ${err}`);
       console.error('AuthService: Failed to get preferences', err);
     }
   }
@@ -109,6 +111,7 @@ export class AuthService {
       let result = await md.digest();
       return this.uint8ArrayToHex(result.data);
     } catch (err) {
+      Logger.error('AuthService', `Hash error: ${err}`);
       console.error('AuthService: Hash error', err);
       throw new Error('加密失败');
     }

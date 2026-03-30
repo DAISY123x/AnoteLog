@@ -2,6 +2,7 @@ import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { RdbManager } from '../common/database/RdbManager';
 import { Note } from '../model/NoteModel';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -21,6 +22,8 @@ struct AdvicePage {
   async refreshData() {
     try {
       this.advices = await RdbManager.getInstance().getNotes(undefined, undefined, true, this.selectedCategory);
+    } catch (e) {
+      Logger.error('AdvicePage', 'Fetch advice failed');
     } catch (e) {
       console.error('Fetch advice failed', e);
     }

@@ -2,6 +2,7 @@ import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { RdbManager } from '../common/database/RdbManager';
 import { Note } from '../model/NoteModel';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -29,6 +30,8 @@ struct NoteEditPage {
         this.category = note.category || '经验';
         this.isShared = note.isShared || false;
       }
+    } catch (e) {
+      Logger.error('NoteEditPage', 'Parse router params failed');
     } catch (e) {
       console.error('Parse router params failed', e);
     }
@@ -67,8 +70,9 @@ struct NoteEditPage {
         promptAction.showToast({ message: '笔记已保存' });
       }
     } catch (err) {
+      Logger.error('NoteEditPage', 'Save note failed');
+    } catch (err) {
       console.error('Save note failed', err);
-      promptAction.showToast({ message: '保存失败' });
     }
   }
 

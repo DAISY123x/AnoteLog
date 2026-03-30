@@ -1,5 +1,6 @@
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
+import { Logger } from '../utils/Logger';
 
 import { MapService, PlaceResult } from '../service/MapService';
 
@@ -134,10 +135,11 @@ struct SearchPage {
                   .borderRadius(8)
                   .objectFit(ImageFit.Cover)
                   .backgroundColor('#F0F0F0')
+                  Logger.warn('SearchPage', 'Failed to load icon: ' + item.icon);
+                  })
                   .onError(() => {
                     // Fallback if load fails
                     console.warn('[SearchPage] Failed to load icon: ' + item.icon);
-                  })
 
                 Column() {
                   Text(item.title)
@@ -208,7 +210,7 @@ struct SearchPage {
 
   async performSearch(keyword: string) {
     if (!this.isNetworkAvailable) {
-      console.warn('[SearchPage] Network flag is false, attempting search anyway...');
+      Logger.warn('SearchPage', 'Network flag is false, attempting search anyway...');
       promptAction.showToast({ message: '网络状态不佳，正在尝试搜索...' });
       // Remove blocking return
     }
@@ -217,8 +219,10 @@ struct SearchPage {
       return;
     }
     try {
+      Logger.info('SearchPage', `Starting search for: ${keyword}`);
       console.info(`[SearchPage] Starting search for: ${keyword}`);
       const places = await MapService.getInstance().searchPlaces(keyword);
+      Logger.info('SearchPage', `Got ${places.length} results`);
       console.info(`[SearchPage] Got ${places.length} results`);
       this.searchResults = places.map(p => {
         return {
@@ -232,6 +236,7 @@ struct SearchPage {
         } as SearchResult;
       });
     } catch (err) {
+      Logger.error('SearchPage', `Search failed with error: ${JSON.stringify(err)}`);
       console.error('[SearchPage] Search failed with error:', JSON.stringify(err));
       // Extract error message if possible
       let msg = '搜索失败，请重试';
@@ -248,7 +253,7 @@ struct SearchPage {
   selectPlace(place: SearchResult) {
     // Explicitly set AppStorage
     AppStorage.setOrCreate('selectedSearchResult', place);
-    console.info(`[SearchPage] Selected place: ${place.title}`);
+    Logger.info('SearchPage', `Selected place: ${place.title}`);
     router.back();
   }
 }

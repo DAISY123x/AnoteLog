@@ -2,6 +2,7 @@ import router from '@ohos.router';
 import { RdbManager } from '../common/database/RdbManager';
 import { Note } from '../model/NoteModel';
 import { promptAction } from '@kit.ArkUI';
+import { Logger } from '../utils/Logger';
 
 interface CardStyle {
   backgroundColor: Resource;
@@ -35,8 +36,9 @@ struct NoteListPage {
         this.hasMore = false;
       }
     } catch (e) {
+      Logger.error('NoteListPage', 'Refresh notes failed');
+    } catch (e) {
       console.error('Refresh notes failed', e);
-      promptAction.showToast({ message: '刷新失败' });
     } finally {
       this.isRefreshing = false;
       this.isLoading = false;
@@ -56,6 +58,8 @@ struct NoteListPage {
         this.hasMore = false;
       }
       this.notes = this.notes.concat(newNotes);
+    } catch (e) {
+      Logger.error('NoteListPage', 'Load more notes failed');
     } catch (e) {
       console.error('Load more notes failed', e);
       this.currentPage--;
@@ -85,7 +89,7 @@ struct NoteListPage {
         }
       });
     } catch (e) {
-      console.error('Delete note failed', e);
+      Logger.error('NoteListPage', 'Delete note failed');
     }
   }
 
@@ -130,7 +134,7 @@ struct NoteListPage {
         return $r(`app.media.${note.coverImage}`);
       }
     } catch (e) {
-      console.error('Get cover image failed', e);
+      Logger.error('NoteListPage', 'Get cover image failed');
     }
     // 系统默认封面图片
     return $r('app.media.journal_2');

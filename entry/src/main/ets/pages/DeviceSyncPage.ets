@@ -3,6 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { MyServiceWrapper } from '../service/MyServiceWrapper';
 import { Device } from '../service/DeviceService';
 import { RouterManager } from '../common/utils/RouterManager';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -20,8 +21,9 @@ struct DeviceSyncPage {
     try {
       this.devices = await MyServiceWrapper.getInstance().getBoundDevices();
     } catch (e) {
+      Logger.error('DeviceSyncPage', 'Failed to load devices');
+    } catch (e) {
       console.error('Failed to load devices', e);
-      promptAction.showToast({ message: '加载设备列表失败' });
     } finally {
       this.isLoading = false;
     }
@@ -46,8 +48,9 @@ struct DeviceSyncPage {
       });
       promptAction.showToast({ message: '同步完成' });
     } catch (e) {
+      Logger.error('DeviceSyncPage', 'Sync failed');
+    } catch (e) {
       console.error('Sync failed', e);
-      promptAction.showToast({ message: '同步失败' });
     } finally {
       this.isSyncing = false;
     }

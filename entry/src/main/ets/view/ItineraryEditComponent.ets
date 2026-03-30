@@ -3,6 +3,7 @@ import { MapComponent, mapCommon, map } from '@kit.MapKit';
 import { AsyncCallback } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
 import router from '@ohos.router';
+import { Logger } from '../utils/Logger';
 
 @Component
 export struct ItineraryEditComponent {
@@ -58,6 +59,7 @@ export struct ItineraryEditComponent {
   initMapCallback() {
     this.mapCallback = (err, controller) => {
       if (err || !controller) {
+        Logger.error('ItineraryEditComponent', `Map init failed: ${err}`);
         console.error('Map init failed', err);
         this.isMapError = true;
         return;

@@ -1,5 +1,6 @@
 import { CustomPlace } from '../model/CustomPlaceModel';
 import { RdbManager } from '../common/database/RdbManager';
+import { Logger } from '../utils/Logger';
 
 export class PlaceService {
   private static instance: PlaceService;
@@ -15,6 +16,7 @@ export class PlaceService {
 
   // "POST" interface simulation
   public async addPlace(place: CustomPlace): Promise<number> {
+    Logger.info('PlaceService', `Adding place: ${JSON.stringify(place)}`);
     console.info('[PlaceService] Adding place:', JSON.stringify(place));
     
     // 1. Data Validation
@@ -40,9 +42,11 @@ export class PlaceService {
     // 3. Storage
     try {
       const id = await RdbManager.getInstance().insertCustomPlace(place);
+      Logger.info('PlaceService', `Place added successfully, id: ${id}`);
       console.info('[PlaceService] Place added successfully, id:', id);
       return id;
     } catch (e) {
+      Logger.error('PlaceService', `DB Error: ${e}`);
       console.error('[PlaceService] DB Error:', e);
       throw new Error('Internal Server Error: Failed to save place');
     }
@@ -105,6 +109,7 @@ export class PlaceService {
       return count;
     } catch (err) {
       const e = err as Error;
+      Logger.error('PlaceService', `Import failed: ${e}`);
       console.error('[PlaceService] Import failed', e);
       throw new Error('Import Failed: Invalid JSON format');
     }

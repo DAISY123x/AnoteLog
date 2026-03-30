@@ -1,6 +1,7 @@
 import router from '@ohos.router';
 import { RdbManager, DbPlace } from '../common/database/RdbManager';
 import { RouterManager } from '../common/utils/RouterManager';
+import { Logger } from '../utils/Logger';
 import { Note } from '../model/NoteModel';
 
 @Entry
@@ -18,12 +19,13 @@ struct MyLikesPage {
   async refreshData() {
     this.isLoading = true;
     try {
-      // MOCK DATA - Database operations removed for navigation testing
+      // @deprecated: 待接入后端后启用真实数据库调用
       // this.notes = await RdbManager.getInstance().getLikedNotes();
       // this.places = await RdbManager.getInstance().getLikedPlaces();
-      this.notes = [];
-      this.places = [];
+      this.notes = []; // TODO: 替换为上方真实调用
+      this.places = []; // TODO: 替换为上方真实调用
     } catch (e) {
+      Logger.error('MyLikesPage', 'Fetch likes failed', e);
       console.error('Fetch likes failed', e);
     } finally {
       this.isLoading = false;

@@ -3,6 +3,7 @@ import { Trip, TripPlace } from '../../model/TripModel';
 import { Note } from '../../model/NoteModel';
 import { CustomPlace } from '../../model/CustomPlaceModel';
 import common from '@ohos.app.ability.common';
+import { Logger } from '../../utils/Logger';
 
 // 数据库查询返回的场所接口，不包含trip相关字段
 export interface DbPlace {
@@ -46,6 +47,7 @@ export class RdbManager {
       this.rdbStore = await relationalStore.getRdbStore(context, STORE_CONFIG);
       await this.createTables();
     } catch (err) {
+      Logger.error('RdbManager', `init RdbStore failed, code is ${err.code}, message is ${err.message}`);
       console.error(`init RdbStore failed, code is ${err.code}, message is ${err.message}`);
     }
   }

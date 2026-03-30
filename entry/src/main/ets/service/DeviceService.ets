@@ -1,3 +1,5 @@
+import { Logger } from '../utils/Logger';
+
 export interface Device {
   id: string;
   name: string;
@@ -12,6 +14,7 @@ export class DeviceService {
    * @returns Promise<Device[]>
    */
   static async getBoundDevices(): Promise<Device[]> {
+    Logger.debug('DeviceService', '获取绑定设备');
     console.log('[DEBUG] DeviceService: 获取绑定设备');
     // 模拟网络请求延迟
     await new Promise<void>((resolve: (value: void | PromiseLike<void>) => void) => {
@@ -30,10 +33,12 @@ export class DeviceService {
    * @returns Promise<boolean>
    */
   static async syncAllDevices(): Promise<boolean> {
+     Logger.debug('DeviceService', '开始同步设备');
      console.log('[DEBUG] DeviceService: 开始同步设备');
      await new Promise<void>((resolve: (value: void | PromiseLike<void>) => void) => {
        setTimeout(resolve, 1500);
      });
+     Logger.debug('DeviceService', '设备同步完成');
      console.log('[DEBUG] DeviceService: 设备同步完成');
      return true;
   }

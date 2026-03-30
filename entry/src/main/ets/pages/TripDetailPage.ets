@@ -6,6 +6,7 @@ import { RdbManager } from '../common/database/RdbManager';
 import { promptAction } from '@kit.ArkUI';
 import { ItineraryEditComponent } from '../view/ItineraryEditComponent';
 import { SearchResult } from './SearchPage';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -34,7 +35,7 @@ struct TripDetailPage {
     try {
       this.allPlaces = await RdbManager.getInstance().getTripPlaces(this.trip.id);
     } catch (e) {
-      console.error('Load places failed', e);
+      Logger.error('TripDetailPage', 'Load places failed');
     } finally {
       this.isLoading = false;
     }
@@ -110,8 +111,9 @@ struct TripDetailPage {
 
       promptAction.showToast({ message: '保存成功' });
     } catch (e) {
+      Logger.error('TripDetailPage', 'Save failed');
+    } catch (e) {
       console.error('Save failed', e);
-      promptAction.showToast({ message: '保存失败' });
     }
   }
 
@@ -125,9 +127,11 @@ struct TripDetailPage {
             this.editingDayIndex = dayIndex;
             router.pushUrl({ url: 'pages/SearchPage' })
               .then(() => {
+                Logger.info('TripDetailPage', 'Succeeded in jumping to the second page.')
                 console.info('Succeeded in jumping to the second page.')
               })
               .catch((err: BusinessError) => {
+                Logger.error('TripDetailPage', `Failed to jump to the second page.Code is ${err.code}, message is ${err.message}`)
                 console.error(`Failed to jump to the second page.Code is ${err.code}, message is ${err.message}`)
               })
           },
