@@ -2118,14 +2118,63 @@ Step 4: 分模块切换
 
 ### 15.3 ArkTS 严格类型检查
 
-**⚠️ ArkTS 是 TypeScript 的超集，有更严格的限制**
+**⚠️ 静态方法中禁止用 `this` 访问静态属性**
+
+```ets
+// ❌ 错误 - ArkTS 静态方法中 this 不能访问静态属性
+export class Logger {
+  private static readonly DOMAIN: number = 0x0000;
+  static info(tag: string, message: string, ...args: Object[]): void {
+    hilog.info(this.DOMAIN, tag, `[${this.PREFIX}] ${message}`, args); // 编译错误
+  }
+}
+
+// ✅ 正确 - 必须用类名访问静态属性
+export class Logger {
+  private static readonly DOMAIN: number = 0x0000;
+  static info(tag: string, message: string, ...args: Object[]): void {
+    hilog.info(Logger.DOMAIN, tag, `[${Logger.PREFIX}] ${message}`, args);
+  }
+}
+```
+
+**⚠️ @Component struct 中箭头函数属性的 this 上下文问题**
+
+```ets
+// ❌ 错误 - 箭头函数属性作为 class field 初始化时，this 上下文不正确
+@Component
+export struct MapContainer {
+  private mapController: map.MapComponentController | null = null;
+  // 箭头函数属性在初始化时 this 指向回调而非 struct 实例
+  private onMapLoad: AsyncCallback<...> = (err, mapController) => {
+    this.mapController = mapController; // this 为 undefined
+    this.updateMap(); // this 为 undefined
+  };
+}
+
+// ✅ 正确 - 在 aboutToAppear() 中初始化回调函数
+@Component
+export struct MapContainer {
+  private mapCallback: AsyncCallback<...> | undefined = undefined;
+
+  aboutToAppear(): void {
+    // 在生命周期方法中初始化箭头函数，this 指向正确
+    this.mapCallback = (err, mapController) => {
+      this.mapController = mapController; // 正确
+      this.updateMap(); // 正确
+    };
+  }
+}
+```
+
+**⚠️ 其他类型检查要点**
 
 | 问题 | 错误示例 | 正确写法 |
 |------|---------|---------|
 | 类型不匹配 | `private count: number = '1'` | `private count: number = 1` |
 | null 安全 | `let x = obj.field` 可能为 null | 使用 `obj?.field` 或显式类型 |
 | 装饰器 | `@State`、`@Link` 等必须精确导入 | `import { State } from '@kit.ArkUI'` |
-| @Builder 参数 | Builder 内无法访问外部 this | 使用 `this.keyword` 或箭头函数 |
+| @Builder 参数 | Builder 内无法访问外部 this | 使用 `@Builder function name(...)` 声明式 |
 
 ### 15.4 日志输出
 

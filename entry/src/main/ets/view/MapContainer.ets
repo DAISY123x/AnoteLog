@@ -7,39 +7,53 @@ import { Logger } from '../utils/Logger';
 @Component
 export struct MapContainer {
   @Prop @Watch('updateMap') places: TripPlace[];
-  @Prop @Watch('updateMap') routePoints: RoutePoint[]; // Receive route points
+  @Prop @Watch('updateMap') routePoints: RoutePoint[];
   private mapController: map.MapComponentController | null = null;
-  private readonly TAG = 'MapContainer';
-  private onMapLoad: AsyncCallback<map.MapComponentController> = (err, mapController) => {
-    if (!err && mapController) {
-      Logger.info(this.TAG, 'onMapLoad: Map loaded successfully');
-      this.mapController = mapController;
-      this.mapController.setMyLocationEnabled(true);
-      this.mapController.setMyLocationControlsEnabled(true);
+  private mapOptions: mapCommon.MapOptions | undefined = undefined;
+  private mapCallback: AsyncCallback<map.MapComponentController> | undefined = undefined;
 
-      // Initial update
-      this.updateMap();
-    } else {
-      Logger.error(this.TAG, 'onMapLoad: Failed to load map', [err]);
-    }
-  };
+  aboutToAppear(): void {
+    // Initialize map options
+    this.mapOptions = {
+      position: {
+        target: { latitude: 39.9082, longitude: 116.3977 },
+        zoom: 10
+      }
+    };
 
-  updateMap() {
+    // Initialize callback - using regular method to avoid 'this' context issues in @Component struct
+    this.mapCallback = (err: BusinessError, mapController: map.MapComponentController): void => {
+      if (!err && mapController) {
+        Logger.info('MapContainer', 'onMapLoad: Map loaded successfully');
+        this.mapController = mapController;
+        this.mapController.setMyLocationEnabled(true);
+        this.mapController.setMyLocationControlsEnabled(true);
+        this.updateMap();
+      } else {
+        Logger.error('MapContainer', 'onMapLoad: Failed to load map', [err?.code, err?.message]);
+      }
+    };
+  }
+
+  aboutToDisappear(): void {
+    this.mapController = null;
+    this.mapCallback = undefined;
+  }
+
+  updateMap(): void {
     if (!this.mapController) {
       return;
     }
 
-    Logger.info(this.TAG, 'updateMap: Updating map',
+    Logger.info('MapContainer', 'updateMap: Updating map',
       [this.places.length, this.routePoints ? this.routePoints.length : 0]);
 
-    // Clear existing annotations and polylines
     this.mapController.clear();
 
     if (this.places.length === 0) {
       return;
     }
 
-    // Add Markers
     this.places.forEach((place, index) => {
       if (place.latitude !== undefined && place.longitude !== undefined) {
         let markerOptions: mapCommon.MarkerOptions = {
@@ -50,20 +64,15 @@ export struct MapContainer {
           title: place.title,
           snippet: place.address,
           clickable: true,
-          // Use a simple color/icon differentiation if possible, 
-          // or just default marker for now to ensure stability.
-          // To use custom icon: icon: 'path/to/icon'
           icon: this.getIconPath(place.type)
         };
         this.mapController?.addMarker(markerOptions);
       }
     });
 
-    // Draw Polyline
-    // If we have routePoints, use them
     if (this.routePoints && this.routePoints.length > 1) {
-      Logger.info(this.TAG, 'updateMap: Drawing route polyline');
-      
+      Logger.info('MapContainer', 'updateMap: Drawing route polyline');
+
       const validPoints = this.routePoints
         .filter(p => p && typeof p.latitude === 'number' && typeof p.longitude === 'number')
         .map(p => ({ latitude: p.latitude, longitude: p.longitude } as mapCommon.LatLng));
@@ -72,17 +81,16 @@ export struct MapContainer {
         try {
           this.mapController.addPolyline({
             points: validPoints,
-            color: 0xFF1677FF, // Blue color
+            color: 0xFF1677FF,
             width: 10,
             zIndex: 10
           });
         } catch (e) {
-          Logger.error(this.TAG, 'updateMap: Failed to add polyline', [e]);
+          Logger.error('MapContainer', 'updateMap: Failed to add polyline', [e]);
         }
       }
     } else if (this.places.length > 1) {
-      // Fallback to straight lines
-      Logger.info(this.TAG, 'updateMap: Drawing straight lines fallback');
+      Logger.info('MapContainer', 'updateMap: Drawing straight lines fallback');
       const points = this.places
         .filter(p => p && typeof p.latitude === 'number' && typeof p.longitude === 'number')
         .map(p => ({ latitude: p.latitude!, longitude: p.longitude! } as mapCommon.LatLng));
@@ -91,30 +99,24 @@ export struct MapContainer {
         try {
           this.mapController.addPolyline({
             points: points,
-            color: 0xFFAAAAAA, // Grey for straight line
+            color: 0xFFAAAAAA,
             width: 6,
             zIndex: 5
           });
         } catch (e) {
-          Logger.error(this.TAG, 'updateMap: Failed to add fallback polyline', [e]);
+          Logger.error('MapContainer', 'updateMap: Failed to add fallback polyline', [e]);
         }
       }
     }
 
-    // Fit bounds to show all markers
     this.fitBounds();
   }
 
   getIconPath(type: string): string | undefined {
-    // MapKit expects file path or resource. 
-    // Since we can't easily map resource ID to path here without context,
-    // we might just return undefined to use default red marker, 
-    // or use a known asset path if copied to rawfile.
-    // For "High pass rate", default marker is safest unless we are sure about assets.
     return undefined;
   }
 
-  fitBounds() {
+  fitBounds(): void {
     if (this.places.length === 0 || !this.mapController) {
       return;
     }
@@ -123,7 +125,6 @@ export struct MapContainer {
     let maxLat = -90;
     let minLng = 180;
     let maxLng = -180;
-
     let hasValidLocation = false;
 
     this.places.forEach(p => {
@@ -145,32 +146,25 @@ export struct MapContainer {
     });
 
     if (hasValidLocation) {
-      // Add some padding
       const padding = 0.05;
-      const bounds: mapCommon.LatLngBounds = {
+      let update = map.newLatLngBounds({
         northeast: { latitude: maxLat + padding, longitude: maxLng + padding },
         southwest: { latitude: minLat - padding, longitude: minLng - padding }
-      };
-
-      // cameraUpdate is used to move camera
-      let update = map.newLatLngBounds(bounds, 100); // 100 padding
+      }, 100);
       this.mapController.animateCamera(update);
     }
   }
 
   build() {
     Stack() {
-      MapComponent({
-        mapOptions: {
-          position: {
-            target: { latitude: 39.9082, longitude: 116.3977 }, // Default Beijing
-            zoom: 10
-          }
-        },
-        mapCallback: this.onMapLoad
-      })
-        .width('100%')
-        .height('100%')
+      if (this.mapOptions && this.mapCallback) {
+        MapComponent({
+          mapOptions: this.mapOptions,
+          mapCallback: this.mapCallback
+        })
+          .width('100%')
+          .height('100%')
+      }
     }
   }
 }
