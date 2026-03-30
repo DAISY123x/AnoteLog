@@ -1,0 +1,24 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/LoginPage",
+    "pages/NewTripPage",
+    "pages/SearchPage",
+    "pages/PlaceDetailPage",
+    "pages/NotificationPage",
+    "pages/NoteDetailPage",
+    "pages/AdvicePage",
+    "pages/ProfileEditPage",
+    "pages/NoteListPage",
+    "pages/NoteEditPage",
+    "pages/RecentTripsPage",
+    "pages/TripDetailPage",
+    "pages/PendingTripsPage",
+    "pages/MyLikesPage",
+    "pages/DeviceSyncPage",
+    "pages/FeedbackPage",
+    "pages/PlaceManagementPage",
+    "pages/AddPlacePage",
+    "pages/AttractionInfoPage"
+  ]
+}

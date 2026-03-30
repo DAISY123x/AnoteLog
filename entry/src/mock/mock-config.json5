@@ -1,0 +1,41 @@
+{
+  // Mock 数据配置
+  // TODO: 待接入后端时，将此处 enabled 设为 true 启用真实 API
+  enabled: false,
+
+  // 后端 API 地址
+  baseUrl: 'http://localhost:8080/api',
+
+  // 分模块 Mock 控制
+  modules: {
+    note: true,
+    trip: true,
+    place: true,
+    user: false,
+    ai: true,
+    map: true,
+  },
+
+  // 首页推荐数据
+  banners: [
+    { id: 1, imageSrc: 'https://example.com/banner1.jpg', title: '瑞士阿尔卑斯山' },
+    { id: 2, imageSrc: 'https://example.com/banner2.jpg', title: '马尔代夫群岛' },
+  ],
+
+  // 示例行程数据
+  sampleTrips: [
+    {
+      id: 1,
+      name: '示例行程 (测试数据)',
+      location: '巴黎',
+      status: 'planning',
+      startDate: '2026-04-01',
+      endDate: '2026-04-05',
+    }
+  ],
+
+  // 示例通知
+  notifications: [
+    { id: 1, title: '系统通知', content: '欢迎使用旅游攻略助手！', time: '10:00', isRead: false }
+  ]
+}

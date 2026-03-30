@@ -1,0 +1,26 @@
+---
+description: Anote 项目架构约束
+globs: entry/src/main/ets/**/*.ets
+alwaysApply: true
+---
+# Anote 项目架构约束
+
+## 禁止事项
+1. **禁止**在 pages/ 目录下直接调用 RdbManager，应通过 service/ 或 dao/ 访问
+2. **禁止**在 pages/ 目录下编写业务逻辑，应在 service/ 中实现
+3. **禁止**硬编码 API Key，必须通过 ConfigService 读取
+4. **禁止**使用 console.log，必须使用 Logger
+5. **禁止**在单文件中定义超过 3 个 @Builder
+6. **禁止**将超过 300 行的逻辑写在同一个 .ets 文件中
+
+## 必须事项
+1. 每个 .ets 文件必须有 @file JSDoc 注释
+2. 每个 service/repository/dao 必须有单例 getInstance()
+3. 所有接口定义放在 model/ 或 common/types/
+4. Mock 数据必须放在 entry/src/mock/ 目录下
+5. 新增页面必须在 main_pages.json 中注册路由
+
+## 地图服务分层
+- MapService.ets    → 只负责地点搜索 (site.searchText)
+- RouteService.ets  → 只负责路径规划 (navi.getDrivingRoutes)
+- MapContainer.ets  → 统一地图 UI 组件
