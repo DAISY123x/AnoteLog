@@ -22,6 +22,7 @@
 - [十二、紧急回滚方案](#十二紧急回滚方案)
 - [十三、后期扩展功能清单](#十三后期扩展功能清单)
 - [十四、后端规划（并行）](#十四后端规划并行)
+- [十五、HarmonyOS ArkTS 特殊注意事项](#十五harmonyos-arts-特殊注意事项)
   - [14.1 技术选型决策](#141-技术选型决策)
   - [14.2 项目结构](#142-项目结构)
   - [14.3 数据库设计](#143-数据库设计)
@@ -317,7 +318,7 @@ alwaysApply: true
 1. 每个 .ets 文件必须有 @file JSDoc 注释
 2. 每个 service/repository/dao 必须有单例 getInstance()
 3. 所有接口定义放在 model/ 或 common/types/
-4. Mock 数据必须放在 entry/src/mock/ 目录下
+4. Mock 数据配置必须放在 `resources/rawfile/` 目录下，禁止放在 `src/mock/` 目录
 ```
 
 ### 0.4 创建常量和枚举
@@ -502,7 +503,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 ### 0.6 创建 Mock 数据目录
 
-**文件**: `entry/src/mock/mock-config.json5`
+**文件**: `entry/resources/rawfile/mock-config.json`
 
 ```json5
 {
@@ -541,7 +542,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 - [ ] `.cursor/rules/` 下有 2 个规则文件
 - [ ] `AppConstants.ets` 和 `ErrorCode.ets` 存在
 - [ ] `CommonTypes.ets` 存在且包含所有内联 interface
-- [ ] `entry/src/mock/mock-config.json5` 存在
+- [ ] `entry/resources/rawfile/mock-config.json` 存在
 - [ ] 编译日志无新增 error
 
 ### 0.8 Git 提交
@@ -555,7 +556,7 @@ git commit -m "refactor(phase-0): 基础设施搭建
 - 新增 Cursor 规则文件 (harmony-standards, project-architecture)
 - 新增 AppConstants, ErrorCode 常量模块
 - 新增 CommonTypes 统一类型定义
-- 新增 mock/mock-config.json5 配置
+- 新增 resources/rawfile/mock-config.json Mock 数据配置
 - 所有修改已验证可编译运行
 
 tag: phase-0-infrastructure"
@@ -1542,11 +1543,11 @@ git checkout -b refactor/phase-X-retry
 #### 14.1.2 前端 Mock 策略
 
 **开发阶段**：前端所有接口使用 Mock 数据（Phase 4 中的 `@deprecated` 标注位置）  
-**联调阶段**：修改配置文件 `entry/src/mock/mock-config.json5` 中 `enabled: true` 即可切换真实接口
+**联调阶段**：修改配置文件 `entry/resources/rawfile/mock-config.json` 中 `enabled: true` 即可切换真实接口
 
 ```json5
 {
-  // mock-config.json5
+  // mock-config.json
   enabled: true,   // 改为 true 启用真实 API
   baseUrl: 'http://your-server:8080/api',  // 后端地址
   
@@ -1938,8 +1939,8 @@ export class ApiClient {
 #### 14.6.2 Mock 数据目录
 
 ```
-entry/src/mock/
-├── mock-config.json5        # Mock 开关配置
+entry/src/main/resources/rawfile/
+├── mock-config.json        # Mock 开关配置
 ├── MockService.ets         # Mock 服务入口
 ├── MockNotes.ets           # 笔记 Mock 数据
 ├── MockTrips.ets           # 行程 Mock 数据
@@ -2026,7 +2027,7 @@ Step 1: 后端部署
 └── 验证: GET http://localhost:8080/api/health → {"status": "ok"}
 
 Step 2: 前端配置
-├── 修改 entry/src/mock/mock-config.json5
+├── 修改 entry/resources/rawfile/mock-config.json
 │   └── enabled: true
 │   └── baseUrl: 'http://your-server:8080/api'
 └── 修改 entry/src/main/module.json5
@@ -2090,9 +2091,86 @@ Step 4: 分模块切换
 
 ---
 
+## 十五、HarmonyOS ArkTS 特殊注意事项
+
+> 本节记录在 HarmonyOS 项目中容易出错的地方，基于实际构建经验总结。
+
+### 15.1 源码目录结构
+
+**⚠️ 禁止将配置文件放在 `src/` 下的自定义目录**
+
+- `src/mock/`、`src/config/` 等自定义目录会被 hvigor 视为源码目录并尝试编译
+- 如果里面包含 `.json5`、`.json` 等文件，会报 `E00303096 Configuration Error` 错误
+- **正确做法**：配置文件放在 `resources/rawfile/` 目录下
+
+```
+✅ 正确: resources/rawfile/mock-config.json
+❌ 错误: src/mock/mock-config.json5  (会触发 BUILD FAILED)
+```
+
+### 15.2 文件扩展名
+
+**⚠️ 所有 ArkTS 代码必须使用 `.ets` 扩展名**
+
+- `.ts` 文件不会被 hvigor 识别为 ArkTS 源码
+- 如果 `src/` 下有遗留的 `.ts` 文件，需要改名为 `.ets`
+- 导入路径不带扩展名（如 `from '../utils/Logger'`），HarmonyOS 模块解析会自动找到对应的 `.ets` 文件
+
+### 15.3 ArkTS 严格类型检查
+
+**⚠️ ArkTS 是 TypeScript 的超集，有更严格的限制**
+
+| 问题 | 错误示例 | 正确写法 |
+|------|---------|---------|
+| 类型不匹配 | `private count: number = '1'` | `private count: number = 1` |
+| null 安全 | `let x = obj.field` 可能为 null | 使用 `obj?.field` 或显式类型 |
+| 装饰器 | `@State`、`@Link` 等必须精确导入 | `import { State } from '@kit.ArkUI'` |
+| @Builder 参数 | Builder 内无法访问外部 this | 使用 `this.keyword` 或箭头函数 |
+
+### 15.4 日志输出
+
+**⚠️ 使用 `@ohos.hilog` 而不是 `console.*`**
+
+```ets
+// ❌ 错误 - console.* 在生产构建中可能不输出
+console.info('debug message');
+
+// ✅ 正确 - 使用 hilog
+import hilog from '@ohos.hilog';
+hilog.info(0x0000, 'Tag', 'message');
+```
+
+### 15.5 HarmonyOS SDK 模块导入
+
+**⚠️ 正确导入华为 HMS Kit 模块**
+
+```ets
+// ✅ 正确导入方式
+import { site, mapCommon } from '@kit.MapKit';
+import { AccountAuthRequest, AuthAccount } from '@kit.AccountKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import abilityAccessCtrl from '@kit.AbilityKit';
+
+// ❌ 错误 - 混用导入来源
+import router from '@kit.RouterKit';  // router 实际来自 @kit.ArkUI
+```
+
+### 15.6 Map Kit 调试限制
+
+- Map Kit (`@kit.MapKit`) 需要正确的 `client_id`（在 `module.json5` 的 metadata 中配置）
+- **虚拟设备不支持 Map Kit**，地图显示为空白
+- 开发期使用 Mock 坐标数据，真机调试时再验证真实地图
+
+### 15.7 构建验证
+
+每次修改后都需要在 DevEco Studio 中执行 **Build > Rebuild Project** 验证是否报错，而不仅仅依赖语法检查。
+
+---
+
 ## 变更记录
 
 | 日期 | 版本 | 变更内容 | 作者 |
 |------|------|---------|------|
 | 2026-03-30 | v1.0 | 初稿创建 | Claude |
+| 2026-03-30 | v1.1 | Phase 0 完成；新增 HarmonyOS 特殊注意事项 | Claude |
 

@@ -17,7 +17,7 @@ alwaysApply: true
 1. 每个 .ets 文件必须有 @file JSDoc 注释
 2. 每个 service/repository/dao 必须有单例 getInstance()
 3. 所有接口定义放在 model/ 或 common/types/
-4. Mock 数据必须放在 entry/src/mock/ 目录下
+4. Mock 数据配置必须放在 `resources/rawfile/` 目录下，禁止放在 `src/mock/` 目录（hvigor 会将 src/mock 视为源码目录并尝试编译，导致 BUILD FAILED）
 5. 新增页面必须在 main_pages.json 中注册路由
 
 ## 地图服务分层
