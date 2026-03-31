@@ -1,10 +1,16 @@
+/**
+ * @file PendingTripsPage.ets
+ * @brief 待完成行程页
+ * @description 展示计划中/进行中的行程列表，支持刷新和标记完成
+ * @see TripRepository
+ */
 import router from '@ohos.router';
-import { RdbManager } from '../common/database/RdbManager';
-import { Trip, TripPlace, TripViewModel } from '../model/TripModel';
 import { promptAction } from '@kit.ArkUI';
 import { CreateTripDialog } from '../view/CreateTripDialog';
 import { RouterManager } from '../common/utils/RouterManager';
 import { Logger } from '../utils/Logger';
+import { Trip, TripPlace, TripViewModel } from '../model/TripModel';
+import { TripRepository } from '../repository/TripRepository';
 
 interface RouteParams extends Record<string, Object> {
   trip: Trip;
@@ -21,6 +27,7 @@ struct PendingTripsPage {
   private currentPage: number = 0;
   @State searchText: string = '';
   @State editingTrip: Trip | null = null;
+  private tripRepository: TripRepository = new TripRepository();
   editDialogController: CustomDialogController = new CustomDialogController({
     builder: CreateTripDialog({
       tripName: this.editingTrip?.name || '',
@@ -46,30 +53,10 @@ struct PendingTripsPage {
     this.hasMore = true;
 
     try {
-      // @deprecated: 待接入后端后启用真实数据库调用
-      // const trips = await RdbManager.getInstance().getTrips(100, 0, this.searchText, 'all');
-      // const filtered = trips.filter(t => t.status === 'planning' || t.status === 'ongoing');
-      // this.trips = await this.enrichTrips(filtered);
-
-      this.trips = [
-        {
-          id: 1,
-          name: '示例行程 (测试数据)',
-          location: '巴黎',
-          startDate: Date.now(),
-          endDate: Date.now() + 86400000 * 3,
-          status: 'planning',
-          createTime: Date.now(),
-          updateTime: Date.now(),
-          coverImage: '',
-          places: [],
-          startPoint: '未设定',
-          endPoint: '未设定'
-        }
-      ]; // TODO: 替换为上方真实调用
+      const rawTrips = await this.tripRepository.getPendingTrips();
+      this.trips = await this.enrichTrips(rawTrips);
     } catch (e) {
       Logger.error('PendingTripsPage', 'Refresh trips failed', e);
-      console.error('Refresh trips failed', e);
       promptAction.showToast({ message: '刷新失败' });
     } finally {
       this.isRefreshing = false;
@@ -83,10 +70,9 @@ struct PendingTripsPage {
       let places: TripPlace[] = [];
       if (trip.id) {
         try {
-          places = await RdbManager.getInstance().getTripPlaces(trip.id);
+          places = await this.tripRepository.getTripPlaces(trip.id);
         } catch (e) {
           Logger.error('PendingTripsPage', `Failed to load places for trip ${trip.id}`, e);
-          console.error(`Failed to load places for trip ${trip.id}`, e);
         }
       }
       viewModels.push({
@@ -129,12 +115,11 @@ struct PendingTripsPage {
         updateTime: Date.now()
       };
 
-      await RdbManager.getInstance().updateTrip(updatedTrip);
+      await this.tripRepository.update(updatedTrip);
       promptAction.showToast({ message: '已标记为完成' });
       this.refreshData();
     } catch (e) {
       Logger.error('PendingTripsPage', 'Mark trip completed failed', e);
-      console.error('Mark trip completed failed', e);
       promptAction.showToast({ message: '操作失败' });
     }
   }
@@ -152,7 +137,7 @@ struct PendingTripsPage {
         createTime: this.editingTrip.createTime,
         updateTime: Date.now()
       };
-      await RdbManager.getInstance().updateTrip(updatedTrip);
+      await this.tripRepository.update(updatedTrip);
       this.refreshData();
       promptAction.showToast({ message: '修改成功' });
     }

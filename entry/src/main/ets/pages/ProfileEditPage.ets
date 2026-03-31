@@ -1,3 +1,8 @@
+/**
+ * @file ProfileEditPage.ets
+ * @brief 编辑个人资料页
+ * @description 修改用户昵称、签名等信息
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 

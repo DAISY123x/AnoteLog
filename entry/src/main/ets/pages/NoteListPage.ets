@@ -1,5 +1,11 @@
+/**
+ * @file NoteListPage.ets
+ * @brief 笔记列表页
+ * @description 展示笔记列表，支持下拉刷新、上拉加载更多和删除操作
+ * @see NoteRepository
+ */
 import router from '@ohos.router';
-import { RdbManager } from '../common/database/RdbManager';
+import { NoteRepository } from '../repository/NoteRepository';
 import { Note } from '../model/NoteModel';
 import { promptAction } from '@kit.ArkUI';
 import { Logger } from '../utils/Logger';
@@ -17,6 +23,7 @@ struct NoteListPage {
   @State hasMore: boolean = true;
   private pageSize: number = 15;
   private currentPage: number = 0;
+  private noteRepository: NoteRepository = new NoteRepository();
 
   aboutToAppear() {
     this.refreshData();
@@ -31,14 +38,12 @@ struct NoteListPage {
     this.currentPage = 0;
     this.hasMore = true;
     try {
-      this.notes = await RdbManager.getInstance().getNotes(this.pageSize, 0);
+      this.notes = await this.noteRepository.getNotes(this.pageSize, 0);
       if (this.notes.length < this.pageSize) {
         this.hasMore = false;
       }
     } catch (e) {
-      Logger.error('NoteListPage', 'Refresh notes failed');
-    } catch (e) {
-      console.error('Refresh notes failed', e);
+      Logger.error('NoteListPage', 'Refresh notes failed', e);
     } finally {
       this.isRefreshing = false;
       this.isLoading = false;
@@ -53,15 +58,13 @@ struct NoteListPage {
     try {
       this.currentPage++;
       const offset = this.currentPage * this.pageSize;
-      const newNotes = await RdbManager.getInstance().getNotes(this.pageSize, offset);
+      const newNotes = await this.noteRepository.getNotes(this.pageSize, offset);
       if (newNotes.length < this.pageSize) {
         this.hasMore = false;
       }
       this.notes = this.notes.concat(newNotes);
     } catch (e) {
-      Logger.error('NoteListPage', 'Load more notes failed');
-    } catch (e) {
-      console.error('Load more notes failed', e);
+      Logger.error('NoteListPage', 'Load more notes failed', e);
       this.currentPage--;
     } finally {
       this.isLoading = false;
@@ -83,13 +86,13 @@ struct NoteListPage {
         ]
       }).then(async (res) => {
         if (res.index === 1) {
-          await RdbManager.getInstance().deleteNote(id);
+          await this.noteRepository.delete(id);
           promptAction.showToast({ message: '删除成功' });
           this.refreshData();
         }
       });
     } catch (e) {
-      Logger.error('NoteListPage', 'Delete note failed');
+      Logger.error('NoteListPage', 'Delete note failed', e);
     }
   }
 

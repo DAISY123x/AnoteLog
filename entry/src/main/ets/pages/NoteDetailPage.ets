@@ -1,7 +1,15 @@
+/**
+ * @file NoteDetailPage.ets
+ * @brief 笔记详情页
+ * @description 查看笔记详情，支持点赞、分享、编辑和删除操作
+ * @see NoteRepository, LikeRepository
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { RdbManager } from '../common/database/RdbManager';
+import { NoteRepository } from '../repository/NoteRepository';
+import { LikeRepository } from '../repository/LikeRepository';
 import { Note } from '../model/NoteModel';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -9,16 +17,18 @@ struct NoteDetailPage {
   @State note: Note | null = null;
   @State noteImages: string[] = [];
   @State isLiked: boolean = false;
+  private noteRepository: NoteRepository = new NoteRepository();
+  private likeRepository: LikeRepository = new LikeRepository();
 
   async checkLikeStatus() {
     if (this.note && this.note.id) {
-      this.isLiked = await RdbManager.getInstance().isLiked(this.note.id, 'note');
+      this.isLiked = await this.likeRepository.isLiked(this.note.id, 'note');
     }
   }
 
   async toggleLike() {
     if (this.note && this.note.id) {
-      const liked = await RdbManager.getInstance().toggleLike(this.note.id, 'note');
+      const liked = await this.likeRepository.toggleLike(this.note.id, 'note');
       this.isLiked = liked;
       if (liked) {
         promptAction.showToast({ message: '已点赞' });
@@ -37,13 +47,14 @@ struct NoteDetailPage {
           this.noteImages = JSON.parse(this.note.images);
         }
       } catch (e) {
+        Logger.error('NoteDetailPage', 'Parse images failed', e);
         this.noteImages = [];
       }
       this.checkLikeStatus();
     }
   }
 
-  deleteNote() {
+  async deleteNote() {
     if (!this.note || !this.note.id) {
       return;
     }
@@ -57,10 +68,13 @@ struct NoteDetailPage {
       ]
     }).then(async (res) => {
       if (res.index === 1) {
-        if (this.note && this.note.id) {
-          await RdbManager.getInstance().deleteNote(this.note.id);
+        try {
+          await this.noteRepository.delete(this.note!.id!);
           promptAction.showToast({ message: '删除成功' });
           router.back();
+        } catch (e) {
+          Logger.error('NoteDetailPage', 'Delete note failed', e);
+          promptAction.showToast({ message: '删除失败' });
         }
       }
     });

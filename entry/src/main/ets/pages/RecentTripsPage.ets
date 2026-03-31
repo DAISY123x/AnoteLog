@@ -1,8 +1,13 @@
+/**
+ * @file RecentTripsPage.ets
+ * @brief 最近行程页
+ * @description 展示行程列表，支持筛选、新建、编辑、删除和标记完成
+ * @see TripRepository
+ */
 import router from '@ohos.router';
-import { RdbManager } from '../common/database/RdbManager';
+import { TripRepository } from '../repository/TripRepository';
 import { Trip, TripPlace, TripViewModel } from '../model/TripModel';
-import { promptAction, AlertDialog } from '@kit.ArkUI';
-import { CreateTripDialog } from '../view/CreateTripDialog';
+import { promptAction } from '@kit.ArkUI';
 import { Logger } from '../utils/Logger';
 
 @Entry
@@ -14,6 +19,7 @@ struct RecentTripsPage {
   @State hasMore: boolean = true;
   private pageSize: number = 10;
   private currentPage: number = 0;
+  private tripRepository: TripRepository = new TripRepository();
 
   @State filterStatus: string = 'all'; // all, ongoing, completed
   @State searchText: string = '';
@@ -56,21 +62,17 @@ struct RecentTripsPage {
         createTime: Date.now(),
         updateTime: Date.now()
       };
-      const newTripId = await RdbManager.getInstance().insertTrip(trip);
+      const newTripId = await this.tripRepository.insert(trip);
       promptAction.showToast({ message: '行程创建成功' });
       this.refreshData();
-      
-      // Navigate to NewTripPage for creation flow
-      // Assign the new ID to the trip object before passing it
+
       trip.id = newTripId;
       router.pushUrl({
         url: 'pages/NewTripPage',
         params: { trip: trip }
       });
     } catch (e) {
-      Logger.error('RecentTripsPage', 'Create trip failed');
-    } catch (e) {
-      console.error('Create trip failed', e);
+      Logger.error('RecentTripsPage', 'Create trip failed', e);
     }
   }
 
@@ -89,17 +91,20 @@ struct RecentTripsPage {
     this.isRefreshing = true;
     this.currentPage = 0;
     this.hasMore = true;
-    
+
     try {
-      const trips = await RdbManager.getInstance().getTrips(this.pageSize, 0, this.searchText, this.filterStatus);
+      const trips = await this.tripRepository.query({
+        limit: this.pageSize,
+        offset: 0,
+        keyword: this.searchText,
+        status: this.filterStatus
+      });
       if (trips.length < this.pageSize) {
         this.hasMore = false;
       }
       this.trips = await this.enrichTrips(trips);
     } catch (e) {
-      Logger.error('RecentTripsPage', 'Refresh trips failed');
-    } catch (e) {
-      console.error('Refresh trips failed', e);
+      Logger.error('RecentTripsPage', 'Refresh trips failed', e);
     } finally {
       this.isRefreshing = false;
       this.isLoading = false;
@@ -112,16 +117,19 @@ struct RecentTripsPage {
     try {
       this.currentPage++;
       const offset = this.currentPage * this.pageSize;
-      const newTrips = await RdbManager.getInstance().getTrips(this.pageSize, offset, this.searchText, this.filterStatus);
+      const newTrips = await this.tripRepository.query({
+        limit: this.pageSize,
+        offset: offset,
+        keyword: this.searchText,
+        status: this.filterStatus
+      });
       if (newTrips.length < this.pageSize) {
         this.hasMore = false;
       }
       const enriched = await this.enrichTrips(newTrips);
       this.trips = this.trips.concat(enriched);
     } catch (e) {
-      Logger.error('RecentTripsPage', 'Load more trips failed');
-    } catch (e) {
-      console.error('Load more trips failed', e);
+      Logger.error('RecentTripsPage', 'Load more trips failed', e);
       this.currentPage--;
     } finally {
       this.isLoading = false;
@@ -131,30 +139,28 @@ struct RecentTripsPage {
   async enrichTrips(trips: Trip[]): Promise<TripViewModel[]> {
     const viewModels: TripViewModel[] = [];
     for (const trip of trips) {
-       let places: TripPlace[] = [];
-       if (trip.id) {
-         try {
-           places = await RdbManager.getInstance().getTripPlaces(trip.id);
-         } catch (e) {
-           Logger.error('RecentTripsPage', `Failed to load places for trip ${trip.id}`);
-         } catch (e) {
-           console.error(`Failed to load places for trip ${trip.id}`, e);
-         }
-       }
-       viewModels.push({
-         id: trip.id,
-         name: trip.name,
-         location: trip.location,
-         startDate: trip.startDate,
-         endDate: trip.endDate,
-         coverImage: trip.coverImage,
-         status: trip.status,
-         createTime: trip.createTime,
-         updateTime: trip.updateTime,
-         places: places,
-         startPoint: places.length > 0 ? places[0].title : '未设定起点',
-         endPoint: places.length > 0 ? places[places.length - 1].title : '未设定终点'
-       });
+      let places: TripPlace[] = [];
+      if (trip.id) {
+        try {
+          places = await this.tripRepository.getTripPlaces(trip.id);
+        } catch (e) {
+          Logger.error('RecentTripsPage', `Failed to load places for trip ${trip.id}`, e);
+        }
+      }
+      viewModels.push({
+        id: trip.id,
+        name: trip.name,
+        location: trip.location,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        coverImage: trip.coverImage,
+        status: trip.status,
+        createTime: trip.createTime,
+        updateTime: trip.updateTime,
+        places: places,
+        startPoint: places.length > 0 ? places[0].title : '未设定起点',
+        endPoint: places.length > 0 ? places[places.length - 1].title : '未设定终点'
+      });
     }
     return viewModels;
   }
@@ -171,20 +177,19 @@ struct RecentTripsPage {
         ]
       }).then(async (res) => {
         if (res.index === 1) {
-          await RdbManager.getInstance().deleteTrip(id);
+          await this.tripRepository.delete(id);
           promptAction.showToast({ message: '删除成功' });
           this.refreshData();
         }
       });
     } catch (e) {
-      Logger.error('RecentTripsPage', 'Delete trip failed');
+      Logger.error('RecentTripsPage', 'Delete trip failed', e);
     }
   }
 
   async markAsCompleted(id: number | null) {
     if (!id) return;
     try {
-      // Find the trip first to keep other fields
       const tripToUpdate = this.trips.find(t => t.id === id);
       if (!tripToUpdate) return;
 
@@ -199,14 +204,12 @@ struct RecentTripsPage {
         createTime: tripToUpdate.createTime,
         updateTime: Date.now()
       };
-      
-      await RdbManager.getInstance().updateTrip(updatedTrip);
+
+      await this.tripRepository.update(updatedTrip);
       promptAction.showToast({ message: '已标记为完成' });
       this.refreshData();
     } catch (e) {
-      Logger.error('RecentTripsPage', 'Mark trip completed failed');
-    } catch (e) {
-      console.error('Mark trip completed failed', e);
+      Logger.error('RecentTripsPage', 'Mark trip completed failed', e);
     }
   }
 
@@ -298,7 +301,7 @@ struct RecentTripsPage {
         createTime: this.editingTrip.createTime,
         updateTime: Date.now()
       };
-      await RdbManager.getInstance().updateTrip(updatedTrip);
+      await this.tripRepository.update(updatedTrip);
       this.refreshData();
       promptAction.showToast({ message: '修改成功' });
     }

@@ -1,3 +1,8 @@
+/**
+ * @file NotificationPage.ets
+ * @brief 通知页
+ * @description 展示系统通知列表
+ */
 import router from '@ohos.router';
 
 interface NotificationItem {

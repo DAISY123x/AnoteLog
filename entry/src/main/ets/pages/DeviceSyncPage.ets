@@ -1,3 +1,9 @@
+/**
+ * @file DeviceSyncPage.ets
+ * @brief 设备同步页
+ * @description 管理多设备间数据同步
+ * @see DeviceService, MyServiceWrapper
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { MyServiceWrapper } from '../service/MyServiceWrapper';
@@ -22,8 +28,6 @@ struct DeviceSyncPage {
       this.devices = await MyServiceWrapper.getInstance().getBoundDevices();
     } catch (e) {
       Logger.error('DeviceSyncPage', 'Failed to load devices');
-    } catch (e) {
-      console.error('Failed to load devices', e);
     } finally {
       this.isLoading = false;
     }
@@ -49,8 +53,6 @@ struct DeviceSyncPage {
       promptAction.showToast({ message: '同步完成' });
     } catch (e) {
       Logger.error('DeviceSyncPage', 'Sync failed');
-    } catch (e) {
-      console.error('Sync failed', e);
     } finally {
       this.isSyncing = false;
     }

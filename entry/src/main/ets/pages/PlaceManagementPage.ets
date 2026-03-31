@@ -1,7 +1,14 @@
+/**
+ * @file PlaceManagementPage.ets
+ * @brief 地点管理页
+ * @description 管理用户自定义地点，支持查看和删除
+ * @see PlaceService
+ */
 import router from '@ohos.router';
 import { CustomPlace } from '../model/CustomPlaceModel';
 import { PlaceService } from '../service/PlaceService';
 import promptAction from '@ohos.promptAction';
+import { Logger } from '../utils/Logger';
 
 @Entry
 @Component
@@ -145,7 +152,7 @@ struct PlaceManagementPage {
   async exportData() {
     try {
       const json = await PlaceService.getInstance().exportPlacesJson();
-      console.info('Export Data:', json);
+      Logger.info('PlaceManagementPage', `Export Data: ${json}`);
       promptAction.showToast({ message: '数据已导出到日志 (Console)' });
     } catch (e) {
       promptAction.showToast({ message: '导出失败' });

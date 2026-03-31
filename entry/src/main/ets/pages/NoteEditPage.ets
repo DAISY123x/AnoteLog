@@ -1,6 +1,12 @@
+/**
+ * @file NoteEditPage.ets
+ * @brief 笔记编辑页
+ * @description 新建或编辑笔记，支持标题、内容、地点、分类和分享设置
+ * @see NoteRepository
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { RdbManager } from '../common/database/RdbManager';
+import { NoteRepository } from '../repository/NoteRepository';
 import { Note } from '../model/NoteModel';
 import { Logger } from '../utils/Logger';
 
@@ -14,8 +20,8 @@ struct NoteEditPage {
   @State createTime: number = 0;
   @State category: string = '经验';
   @State isShared: boolean = false;
-  
   private categories: string[] = ['经验', '美食', '住宿', '交通', '景点'];
+  private noteRepository: NoteRepository = new NoteRepository();
 
   aboutToAppear() {
     try {
@@ -32,8 +38,6 @@ struct NoteEditPage {
       }
     } catch (e) {
       Logger.error('NoteEditPage', 'Parse router params failed');
-    } catch (e) {
-      console.error('Parse router params failed', e);
     }
   }
 
@@ -63,16 +67,14 @@ struct NoteEditPage {
 
     try {
       if (this.noteId) {
-        await RdbManager.getInstance().updateNote(note);
+        await this.noteRepository.update(note);
         promptAction.showToast({ message: '笔记已更新' });
       } else {
-        await RdbManager.getInstance().insertNote(note);
+        await this.noteRepository.insert(note);
         promptAction.showToast({ message: '笔记已保存' });
       }
     } catch (err) {
-      Logger.error('NoteEditPage', 'Save note failed');
-    } catch (err) {
-      console.error('Save note failed', err);
+      Logger.error('NoteEditPage', 'Save note failed', err);
     }
   }
 

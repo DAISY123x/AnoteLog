@@ -1,7 +1,15 @@
+/**
+ * @file PlaceDetailPage.ets
+ * @brief 景点详情页
+ * @description 展示景点详情，支持 AI 生成介绍、点赞收藏功能
+ * @see LikeRepository, PlaceRepository, AIService
+ */
 import router from '@ohos.router';
 import { RouterManager } from '../common/utils/RouterManager';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { RdbManager, DbPlace } from '../common/database/RdbManager';
+import { LikeRepository } from '../repository/LikeRepository';
+import { PlaceRepository } from '../repository/PlaceRepository';
+import { DbPlace } from '../common/database/RdbManager';
 import { promptAction } from '@kit.ArkUI';
 import vibrator from '@ohos.vibrator';
 import { AIService, AttractionDetail } from '../service/AIService';
@@ -161,7 +169,6 @@ struct PlaceDetailPage {
         }
     } catch (e) {
         Logger.error('PlaceDetailPage', `Preload failed for ${title}`);
-        console.error(`Preload failed for ${title}`, e);
     } finally {
         this.pendingRequests.delete(title);
         if (index === this.currentIndex) {
@@ -262,12 +269,13 @@ struct PlaceDetailPage {
 struct PlaceCard {
   @Prop place: PlaceDetailParams;
   @Prop detailInfo: AttractionDetail | null;
-  @Prop breakpoint: string; // 'sm', 'md', 'lg'
+  @Prop breakpoint: string;
   @Prop isLoading: boolean;
-  
   @State isHovering: boolean = false;
   @State isLiked: boolean = false;
   @State isButtonLoading: boolean = false;
+  private likeRepository: LikeRepository = new LikeRepository();
+  private placeRepository: PlaceRepository = new PlaceRepository();
 
   aboutToAppear() {
     this.checkLikeStatus();
@@ -275,25 +283,31 @@ struct PlaceCard {
 
   async checkLikeStatus() {
     try {
-      this.isLiked = await RdbManager.getInstance().isLiked(this.place.id, 'place');
+      this.isLiked = await this.likeRepository.isLiked(this.place.id, 'place');
     } catch (e) {
-      Logger.error('PlaceCard', 'Check like status failed');
-    } catch (e) {
-      console.error('Check like status failed', e);
+      Logger.error('PlaceCard', 'Check like status failed', e);
     }
   }
 
   async toggleLike() {
     try {
-      // 1. Save place if needed (since PlaceDetailParams might not be in saved_place DB)
       let targetId = this.place.id;
       if (!targetId || targetId === 0) {
-        // Save place first
-        targetId = await RdbManager.getInstance().savePlace(this.place as DbPlace);
+        const dbPlace: DbPlace = {
+          id: 0,
+          title: this.place.title,
+          type: this.place.type || '景点',
+          distanceKm: this.place.distanceKm || 0,
+          durationMin: this.place.durationMin || 0,
+          note: this.place.note,
+          latitude: this.place.latitude,
+          longitude: this.place.longitude
+        };
+        targetId = await this.placeRepository.savePlace(dbPlace);
       }
 
       if (targetId && targetId > 0) {
-        const liked = await RdbManager.getInstance().toggleLike(targetId, 'place');
+        const liked = await this.likeRepository.toggleLike(targetId, 'place');
         this.isLiked = liked;
         if (liked) {
           promptAction.showToast({ message: '已添加到我的点赞' });
@@ -302,7 +316,7 @@ struct PlaceCard {
         }
       }
     } catch (e) {
-      Logger.error('PlaceCard', 'Toggle like failed');
+      Logger.error('PlaceCard', 'Toggle like failed', e);
     }
   }
 

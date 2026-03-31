@@ -1,3 +1,9 @@
+/**
+ * @file AttractionInfoPage.ets
+ * @brief AI景点介绍页
+ * @description 展示AI生成的景点详细信息（文化介绍、开放时间、游玩建议等）
+ * @see AIService
+ */
 import router from '@ohos.router';
 import { AttractionDetail } from '../service/AIService';
 

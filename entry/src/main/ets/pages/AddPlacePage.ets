@@ -1,3 +1,9 @@
+/**
+ * @file AddPlacePage.ets
+ * @brief 添加地点页
+ * @description 新增自定义地点，支持名称、地址、经纬度、类型等信息录入
+ * @see PlaceService
+ */
 import router from '@ohos.router';
 import { PlaceService } from '../service/PlaceService';
 import promptAction from '@ohos.promptAction';
@@ -45,8 +51,6 @@ struct AddPlacePage {
       }
     } catch (e) {
       Logger.error('AddPlacePage', 'Load place failed');
-    } catch (e) {
-      console.error('Load place failed', e);
     }
   }
 

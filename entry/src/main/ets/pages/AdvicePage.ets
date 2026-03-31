@@ -1,6 +1,11 @@
+/**
+ * @file AdvicePage.ets
+ * @brief 旅游建议页
+ * @description 展示已分享的笔记（旅游建议），支持分类筛选
+ * @see NoteRepository
+ */
 import router from '@ohos.router';
-import { promptAction } from '@kit.ArkUI';
-import { RdbManager } from '../common/database/RdbManager';
+import { NoteRepository } from '../repository/NoteRepository';
 import { Note } from '../model/NoteModel';
 import { Logger } from '../utils/Logger';
 
@@ -10,6 +15,8 @@ struct AdvicePage {
   @State selectedCategory: string = '全部';
   @State categories: string[] = ['全部', '经验', '美食', '住宿', '交通', '景点'];
   @State advices: Note[] = [];
+  @State isLoading: boolean = false;
+  private noteRepository: NoteRepository = new NoteRepository();
 
   aboutToAppear() {
     this.refreshData();
@@ -20,12 +27,14 @@ struct AdvicePage {
   }
 
   async refreshData() {
+    this.isLoading = true;
     try {
-      this.advices = await RdbManager.getInstance().getNotes(undefined, undefined, true, this.selectedCategory);
+      const category = this.selectedCategory === '全部' ? undefined : this.selectedCategory;
+      this.advices = await this.noteRepository.getSharedNotes(category);
     } catch (e) {
-      Logger.error('AdvicePage', 'Fetch advice failed');
-    } catch (e) {
-      console.error('Fetch advice failed', e);
+      Logger.error('AdvicePage', 'Fetch advice failed', e);
+    } finally {
+      this.isLoading = false;
     }
   }
 

@@ -1,3 +1,9 @@
+/**
+ * @file LoginPage.ets
+ * @brief 登录页
+ * @description 支持华为ID快捷登录和手机号密码登录
+ * @see AuthService
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { authentication } from '@kit.AccountKit';

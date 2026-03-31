@@ -1,8 +1,14 @@
+/**
+ * @file TripDetailPage.ets
+ * @brief 行程详情页
+ * @description 查看和编辑行程详情，支持添加/删除/排序景点
+ * @see TripRepository, ItineraryEditComponent
+ */
 import router from '@ohos.router';
 import { BusinessError } from '@ohos.base';
 import { RouterManager } from '../common/utils/RouterManager';
 import { Trip, TripPlace } from '../model/TripModel';
-import { RdbManager } from '../common/database/RdbManager';
+import { TripRepository } from '../repository/TripRepository';
 import { promptAction } from '@kit.ArkUI';
 import { ItineraryEditComponent } from '../view/ItineraryEditComponent';
 import { SearchResult } from './SearchPage';
@@ -16,9 +22,9 @@ struct TripDetailPage {
   @State isLoading: boolean = true;
   @State editingDayIndex: number = 0;
   @StorageLink('selectedSearchResult') selectedSearchResult: SearchResult | null = null;
+  private tripRepository: TripRepository = new TripRepository();
 
   aboutToAppear() {
-    // Note: RouterManager doesn't wrap getParams yet, using router directly or adding helper
     const params = RouterManager.getInstance().getParams() as Record<string, Object>;
     if (params && params['trip']) {
       this.trip = params['trip'] as Trip;
@@ -33,9 +39,9 @@ struct TripDetailPage {
       return;
     }
     try {
-      this.allPlaces = await RdbManager.getInstance().getTripPlaces(this.trip.id);
+      this.allPlaces = await this.tripRepository.getTripPlaces(this.trip.id);
     } catch (e) {
-      Logger.error('TripDetailPage', 'Load places failed');
+      Logger.error('TripDetailPage', 'Load places failed', e);
     } finally {
       this.isLoading = false;
     }
@@ -43,25 +49,20 @@ struct TripDetailPage {
 
   onSearchResult() {
     if (this.selectedSearchResult && this.trip) {
-      // Add the selected place
       const newPlace: TripPlace = {
-        id: null, // New place
+        id: null,
         tripId: this.trip.id!,
         title: this.selectedSearchResult.title,
         type: this.selectedSearchResult.type,
         distanceKm: 0,
         durationMin: 60,
         note: this.selectedSearchResult.address,
-        latitude: 39.9087 + Math.random() * 0.01, // Mock location if not provided
+        latitude: 39.9087 + Math.random() * 0.01,
         longitude: 116.3975 + Math.random() * 0.01,
         orderIndex: 999,
         dayIndex: this.editingDayIndex
       };
-
-      // Update UI
       this.allPlaces.push(newPlace);
-
-      // Clear selection
       this.selectedSearchResult = null;
     }
   }
@@ -71,49 +72,30 @@ struct TripDetailPage {
       return;
     }
     try {
-      // 1. Get current DB places to find deletions
-      const dbPlaces = await RdbManager.getInstance().getTripPlaces(this.trip.id);
+      const dbPlaces = await this.tripRepository.getTripPlaces(this.trip.id);
       const dbIds = dbPlaces.map(p => p.id).filter(id => id !== null) as number[];
       const currentIds = this.allPlaces.map(p => p.id).filter(id => id !== null && id !== undefined) as number[];
-
-      // Find IDs to delete
       const toDelete = dbIds.filter(id => !currentIds.includes(id));
       for (const id of toDelete) {
-        await RdbManager.getInstance().deleteTripPlace(id);
+        await this.tripRepository.deletePlace(id);
       }
 
-      // 2. Upsert
       for (let i = 0; i < this.allPlaces.length; i++) {
         const p = this.allPlaces[i];
-        // Update order index based on current list order? 
-        // Note: allPlaces order might not reflect grouped order if user dragged items in groups.
-        // But ItineraryEditComponent updates `groupedPlaces`, not `allPlaces` order directly usually.
-        // Actually, ItineraryEditComponent.groupPlaces() is derived from places.
-        // If we want to support reordering, ItineraryEditComponent should update the `places` array or we should reconstruct it from `groupedPlaces`.
-        // Currently ItineraryEditComponent modifies `groupedPlaces`.
-        // We need `ItineraryEditComponent` to sync back to `allPlaces` or expose the updated list.
-        // Since `places` is a @Link, modifying it inside component works.
-        // BUT `ItineraryEditComponent` currently only reads `places` to group them.
-        // Let's assume for now we trust `allPlaces` contains the content.
-        // Re-ordering logic in `ItineraryEditComponent` needs to update the `@Link places`.
-
         if (p.id) {
-          await RdbManager.getInstance().updateTripPlace(p);
+          await this.tripRepository.updatePlace(p);
         } else {
-          const newId = await RdbManager.getInstance().insertTripPlace(p);
+          const newId = await this.tripRepository.insertPlace(p);
           p.id = newId;
         }
       }
 
-      // Update Trip Info (e.g. updateTime)
       this.trip.updateTime = Date.now();
-      await RdbManager.getInstance().updateTrip(this.trip);
+      await this.tripRepository.update(this.trip);
 
       promptAction.showToast({ message: '保存成功' });
     } catch (e) {
-      Logger.error('TripDetailPage', 'Save failed');
-    } catch (e) {
-      console.error('Save failed', e);
+      Logger.error('TripDetailPage', 'Save failed', e);
     }
   }
 
@@ -128,11 +110,9 @@ struct TripDetailPage {
             router.pushUrl({ url: 'pages/SearchPage' })
               .then(() => {
                 Logger.info('TripDetailPage', 'Succeeded in jumping to the second page.')
-                console.info('Succeeded in jumping to the second page.')
               })
               .catch((err: BusinessError) => {
                 Logger.error('TripDetailPage', `Failed to jump to the second page.Code is ${err.code}, message is ${err.message}`)
-                console.error(`Failed to jump to the second page.Code is ${err.code}, message is ${err.message}`)
               })
           },
           onSave: () => {

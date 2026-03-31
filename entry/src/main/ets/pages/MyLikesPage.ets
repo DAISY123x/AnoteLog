@@ -1,8 +1,15 @@
+/**
+ * @file MyLikesPage.ets
+ * @brief 我的点赞页
+ * @description 展示用户点赞的笔记和景点列表
+ * @see LikeRepository
+ */
 import router from '@ohos.router';
-import { RdbManager, DbPlace } from '../common/database/RdbManager';
+import { DbPlace } from '../common/database/RdbManager';
 import { RouterManager } from '../common/utils/RouterManager';
 import { Logger } from '../utils/Logger';
 import { Note } from '../model/NoteModel';
+import { LikeRepository } from '../repository/LikeRepository';
 
 @Entry
 @Component
@@ -11,6 +18,7 @@ struct MyLikesPage {
   @State notes: Note[] = [];
   @State places: DbPlace[] = [];
   @State isLoading: boolean = true;
+  private likeRepository: LikeRepository = new LikeRepository();
 
   aboutToAppear() {
     this.refreshData();
@@ -19,14 +27,10 @@ struct MyLikesPage {
   async refreshData() {
     this.isLoading = true;
     try {
-      // @deprecated: 待接入后端后启用真实数据库调用
-      // this.notes = await RdbManager.getInstance().getLikedNotes();
-      // this.places = await RdbManager.getInstance().getLikedPlaces();
-      this.notes = []; // TODO: 替换为上方真实调用
-      this.places = []; // TODO: 替换为上方真实调用
+      this.notes = await this.likeRepository.getLikedNotes();
+      this.places = await this.likeRepository.getLikedPlaces();
     } catch (e) {
       Logger.error('MyLikesPage', 'Fetch likes failed', e);
-      console.error('Fetch likes failed', e);
     } finally {
       this.isLoading = false;
     }

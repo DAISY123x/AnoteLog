@@ -1,4 +1,5 @@
 {
+  "_description": "Mock 数据配置文件。enabled=true 时启用 Mock 模式，禁用后端 API 调用",
   "enabled": false,
   "baseUrl": "http://localhost:8080/api",
   "modules": {
@@ -9,21 +10,186 @@
     "ai": true,
     "map": true
   },
-  "banners": [
-    { "id": 1, "imageSrc": "https://example.com/banner1.jpg", "title": "瑞士阿尔卑斯山" },
-    { "id": 2, "imageSrc": "https://example.com/banner2.jpg", "title": "马尔代夫群岛" }
-  ],
-  "sampleTrips": [
+  "notes": [
     {
       "id": 1,
-      "name": "示例行程 (测试数据)",
-      "location": "巴黎",
+      "title": "瑞士阿尔卑斯山之旅",
+      "content": "今天终于登上了阿尔卑斯山的山顶，风景美得令人窒息。漫山的雪和远处的湖泊构成了一幅绝美的画卷。建议大家带好防晒和保暖装备，山上的天气变化很快。",
+      "location": "瑞士因特拉肯",
+      "category": "景点",
+      "isShared": true,
+      "images": "[]",
+      "createTime": 1743356800000,
+      "updateTime": 1743356800000
+    },
+    {
+      "id": 2,
+      "title": "威尼斯美食探店",
+      "content": "在威尼斯老城区找到了一家超棒的意大利餐厅，海鲜意面和提拉米苏都超级正宗！人均30欧，性价比超高。餐厅名字叫 Trattoria Da Romano，就在玻璃岛附近。",
+      "location": "意大利威尼斯",
+      "category": "美食",
+      "isShared": true,
+      "images": "[]",
+      "createTime": 1743270400000,
+      "updateTime": 1743270400000
+    },
+    {
+      "id": 3,
+      "title": "京都赏樱住宿推荐",
+      "content": "这次住在祇园附近的一家传统町屋旅馆，体验非常棒！房东人很热情，还送了抹茶和和果子。步行到清水寺只要15分钟，推荐给大家！",
+      "location": "日本京都",
+      "category": "住宿",
+      "isShared": true,
+      "images": "[]",
+      "createTime": 1743184000000,
+      "updateTime": 1743184000000
+    },
+    {
+      "id": 4,
+      "title": "巴黎交通省钱攻略",
+      "content": "在巴黎推荐购买10次票（Carnet），比单次票便宜很多。地铁和公交通用，注意别刷卡了！机场到市区推荐坐Orlybus，到Denfert-Rochereau约40分钟。",
+      "location": "法国巴黎",
+      "category": "交通",
+      "isShared": true,
+      "images": "[]",
+      "createTime": 1743097600000,
+      "updateTime": 1743097600000
+    },
+    {
+      "id": 5,
+      "title": "冰岛环岛自驾经验",
+      "content": "冰岛环岛一号公路大约1332公里，建议安排10天左右。冬季需要四驱车，夏季普通车也可以。记得带好保暖衣物和防水装备，天气多变。一号公路风景最美的是东部峡湾段。",
+      "location": "冰岛",
+      "category": "经验",
+      "isShared": true,
+      "images": "[]",
+      "createTime": 1743011200000,
+      "updateTime": 1743011200000
+    }
+  ],
+  "trips": [
+    {
+      "id": 1,
+      "name": "欧洲三国游",
+      "location": "法国/瑞士/意大利",
+      "startDate": 1744569600000,
+      "endDate": 1746038400000,
+      "coverImage": "",
       "status": "planning",
-      "startDate": "2026-04-01",
-      "endDate": "2026-04-05"
+      "createTime": 1743356800000,
+      "updateTime": 1743356800000,
+      "places": [
+        {
+          "id": 1,
+          "tripId": 1,
+          "title": "埃菲尔铁塔",
+          "type": "景点",
+          "address": "法国巴黎",
+          "latitude": 48.8584,
+          "longitude": 2.2945,
+          "distanceKm": 0,
+          "durationMin": 120,
+          "note": "建议傍晚去，可以看夜景",
+          "orderIndex": 0,
+          "dayIndex": 0
+        },
+        {
+          "id": 2,
+          "tripId": 1,
+          "title": "因特拉肯",
+          "type": "景点",
+          "address": "瑞士因特拉肯",
+          "latitude": 46.6863,
+          "longitude": 7.8632,
+          "distanceKm": 550,
+          "durationMin": 360,
+          "note": "少女峰所在地",
+          "orderIndex": 1,
+          "dayIndex": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "日本赏樱之旅",
+      "location": "东京/京都/大阪",
+      "startDate": 1747248000000,
+      "endDate": 1748544000000,
+      "coverImage": "",
+      "status": "planning",
+      "createTime": 1743270400000,
+      "updateTime": 1743270400000,
+      "places": [
+        {
+          "id": 3,
+          "tripId": 2,
+          "title": "上野公园",
+          "type": "景点",
+          "address": "日本东京",
+          "latitude": 35.7146,
+          "longitude": 139.7742,
+          "distanceKm": 0,
+          "durationMin": 180,
+          "note": "樱花季必去",
+          "orderIndex": 0,
+          "dayIndex": 0
+        }
+      ]
+    }
+  ],
+  "places": [
+    {
+      "id": 1,
+      "title": "埃菲尔铁塔",
+      "type": "景点",
+      "address": "法国巴黎香榭丽舍大街",
+      "latitude": 48.8584,
+      "longitude": 2.2945,
+      "distanceKm": 0,
+      "durationMin": 120
+    },
+    {
+      "id": 2,
+      "title": "威尼斯圣马可广场",
+      "type": "景点",
+      "address": "意大利威尼斯",
+      "latitude": 45.4343,
+      "longitude": 12.3388,
+      "distanceKm": 0,
+      "durationMin": 90
+    }
+  ],
+  "banners": [
+    {
+      "id": 1,
+      "imageSrc": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1000&auto=format&fit=crop",
+      "title": "瑞士阿尔卑斯山"
+    },
+    {
+      "id": 2,
+      "imageSrc": "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=1000&auto=format&fit=crop",
+      "title": "马尔代夫群岛"
+    },
+    {
+      "id": 3,
+      "imageSrc": "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=1000&auto=format&fit=crop",
+      "title": "意大利五渔村"
     }
   ],
   "notifications": [
-    { "id": 1, "title": "系统通知", "content": "欢迎使用旅游攻略助手！", "time": "10:00", "isRead": false }
+    {
+      "id": 1,
+      "title": "欢迎使用旅游攻略助手",
+      "content": "感谢您下载使用 Anote，开启您的旅行记录之旅吧！",
+      "time": "10:00",
+      "isRead": false
+    },
+    {
+      "id": 2,
+      "title": "行程提醒",
+      "content": "您有一个行程即将开始，请提前做好准备。",
+      "time": "09:00",
+      "isRead": false
+    }
   ]
 }

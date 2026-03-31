@@ -1,8 +1,14 @@
+/**
+ * @file FeedbackPage.ets
+ * @brief 反馈页
+ * @description 用户提交意见反馈
+ * @see FeedbackRepository
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { MyServiceWrapper } from '../service/MyServiceWrapper';
 import { RouterManager } from '../common/utils/RouterManager';
 import { Logger } from '../utils/Logger';
+import { FeedbackRepository } from '../repository/FeedbackRepository';
 
 @Entry
 @Component
@@ -10,6 +16,7 @@ struct FeedbackPage {
   @State content: string = '';
   @State contact: string = '';
   @State isSubmitting: boolean = false;
+  private feedbackRepository: FeedbackRepository = new FeedbackRepository();
 
   async submit() {
     if (!this.content.trim()) {
@@ -19,16 +26,13 @@ struct FeedbackPage {
 
     this.isSubmitting = true;
     try {
-      // @deprecated: 待接入后端后启用真实数据库调用
-      // await MyServiceWrapper.getInstance().submitFeedback(this.content, this.contact);
-      await new Promise<void>(resolve => setTimeout(resolve, 1000)); // TODO: 替换为真实调用
+      await this.feedbackRepository.submit(this.content, this.contact);
       promptAction.showToast({ message: '感谢您的反馈！' });
       setTimeout(() => {
         router.back();
       }, 1000);
     } catch (e) {
       Logger.error('FeedbackPage', 'Submit feedback failed', e);
-      console.error('Submit feedback failed', e);
       promptAction.showToast({ message: '提交失败，请稍后重试' });
       this.isSubmitting = false;
     }

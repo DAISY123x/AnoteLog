@@ -1,3 +1,9 @@
+/**
+ * @file SearchPage.ets
+ * @brief 搜索页
+ * @description 搜索地点，支持按关键字过滤
+ * @see MapService
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { Logger } from '../utils/Logger';
@@ -135,11 +141,10 @@ struct SearchPage {
                   .borderRadius(8)
                   .objectFit(ImageFit.Cover)
                   .backgroundColor('#F0F0F0')
-                  Logger.warn('SearchPage', 'Failed to load icon: ' + item.icon);
-                  })
                   .onError(() => {
                     // Fallback if load fails
-                    console.warn('[SearchPage] Failed to load icon: ' + item.icon);
+                    Logger.warn('SearchPage', 'Failed to load icon: ' + item.icon);
+                  })
 
                 Column() {
                   Text(item.title)
@@ -198,12 +203,12 @@ struct SearchPage {
     .height('100%')
     .backgroundColor(Color.White)
   }
-
   handleSearchInput(keyword: string) {
     if (this.searchTimer !== -1) {
       clearTimeout(this.searchTimer);
     }
     this.searchTimer = setTimeout(() => {
+      // 使用箭头函数绑定this上下文
       this.performSearch(keyword);
     }, 300);
   }
@@ -220,10 +225,8 @@ struct SearchPage {
     }
     try {
       Logger.info('SearchPage', `Starting search for: ${keyword}`);
-      console.info(`[SearchPage] Starting search for: ${keyword}`);
       const places = await MapService.getInstance().searchPlaces(keyword);
       Logger.info('SearchPage', `Got ${places.length} results`);
-      console.info(`[SearchPage] Got ${places.length} results`);
       this.searchResults = places.map(p => {
         return {
           id: p.id,
@@ -237,7 +240,6 @@ struct SearchPage {
       });
     } catch (err) {
       Logger.error('SearchPage', `Search failed with error: ${JSON.stringify(err)}`);
-      console.error('[SearchPage] Search failed with error:', JSON.stringify(err));
       // Extract error message if possible
       let msg = '搜索失败，请重试';
       if (err instanceof Error) {

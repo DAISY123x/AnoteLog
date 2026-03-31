@@ -1,3 +1,9 @@
+/**
+ * @file NewTripPage.ets
+ * @brief 新建/编辑行程页
+ * @description 创建行程或编辑已有行程，管理行程天数和地点
+ * @see TripRepository
+ */
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { AsyncCallback, BusinessError } from '@kit.BasicServicesKit';
@@ -8,7 +14,7 @@ import { MapContainer } from '../view/MapContainer';
 import { TripPlace } from '../model/TripModel';
 import { SearchResult } from './SearchPage';
 import { PlaceResult } from '../service/MapService';
-import { RdbManager } from '../common/database/RdbManager';
+import { TripRepository } from '../repository/TripRepository';
 import { Trip, TripPlace as DbTripPlace, TripWithPlaces } from '../model/TripModel';
 import { Logger } from '../utils/Logger';
 
@@ -18,10 +24,10 @@ struct NewTripPage {
   @State viewModel: TripViewModel = new TripViewModel();
   @State activeGroupIndex: number = 0;
   @State isListExpanded: boolean = true;
-
   @StorageLink('selectedSearchResult') selectedSearchResult: SearchResult | null = null;
   private tripId: number | null = null;
   private readonly TAG = 'NewTripPage';
+  private tripRepository: TripRepository = new TripRepository();
 
   aboutToAppear() {
     Logger.info(this.TAG, 'aboutToAppear: Entering NewTripPage');
@@ -122,11 +128,11 @@ struct NewTripPage {
        let id = this.tripId;
        if (id) {
          Logger.info(this.TAG, 'saveTrip: Updating existing trip', [id]);
-         await RdbManager.getInstance().updateTrip(trip);
-         await RdbManager.getInstance().deleteTripPlacesByTripId(id);
+         await this.tripRepository.update(trip);
+         await this.tripRepository.clearPlaces(id);
        } else {
          Logger.info(this.TAG, 'saveTrip: Creating new trip');
-         id = await RdbManager.getInstance().insertTrip(trip);
+         id = await this.tripRepository.insert(trip);
        }
 
        if (!id) {
@@ -149,11 +155,11 @@ struct NewTripPage {
              latitude: place.latitude,
              longitude: place.longitude,
              orderIndex: orderIndex++,
-             dayIndex: group.id - 1, // Assuming id starts at 1
+             dayIndex: group.id - 1,
              address: place.address,
              icon: place.icon
            };
-           await RdbManager.getInstance().insertTripPlace(dbPlace);
+           await this.tripRepository.insertPlace(dbPlace);
          }
        }
 
