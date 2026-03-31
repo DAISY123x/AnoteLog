@@ -17,8 +17,7 @@ export class PlaceService {
   // "POST" interface simulation
   public async addPlace(place: CustomPlace): Promise<number> {
     Logger.info('PlaceService', `Adding place: ${JSON.stringify(place)}`);
-    console.info('[PlaceService] Adding place:', JSON.stringify(place));
-    
+
     // 1. Data Validation
     if (!place.name || place.name.trim() === '') {
       throw new Error('Validation Failed: Name is required');
@@ -43,11 +42,9 @@ export class PlaceService {
     try {
       const id = await RdbManager.getInstance().insertCustomPlace(place);
       Logger.info('PlaceService', `Place added successfully, id: ${id}`);
-      console.info('[PlaceService] Place added successfully, id:', id);
       return id;
     } catch (e) {
       Logger.error('PlaceService', `DB Error: ${e}`);
-      console.error('[PlaceService] DB Error:', e);
       throw new Error('Internal Server Error: Failed to save place');
     }
   }
@@ -110,7 +107,6 @@ export class PlaceService {
     } catch (err) {
       const e = err as Error;
       Logger.error('PlaceService', `Import failed: ${e}`);
-      console.error('[PlaceService] Import failed', e);
       throw new Error('Import Failed: Invalid JSON format');
     }
   }

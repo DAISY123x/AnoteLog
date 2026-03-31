@@ -5,24 +5,27 @@
  *             数据来源于 resources/rawfile/mock-config.json，切换到真实后端只需设置 enabled=false。
  * @see resources/rawfile/mock-config.json
  */
-import { Note } from '../model/NoteModel';
-import { Trip, TripPlace, TripWithPlaces } from '../model/TripModel';
-import { DbPlace } from '../common/database/RdbManager';
-import { Logger } from '../utils/Logger';
+import { Note } from '../../model/NoteModel';
+import { Trip, TripPlace, TripWithPlaces } from '../../model/TripModel';
+import { DbPlace } from '../database/RdbManager';
+import { Logger } from '../../utils/Logger';
+import resourceManager from '@ohos.resourceManager';
 
 const TAG = 'MockService';
+
+interface MockModules {
+  note: boolean;
+  trip: boolean;
+  place: boolean;
+  user: boolean;
+  ai: boolean;
+  map: boolean;
+}
 
 interface MockConfig {
   enabled: boolean;
   baseUrl: string;
-  modules: {
-    note: boolean;
-    trip: boolean;
-    place: boolean;
-    user: boolean;
-    ai: boolean;
-    map: boolean;
-  };
+  modules: MockModules;
   notes: Note[];
   trips: MockTripWithPlaces[];
   places: MockPlace[];
@@ -37,7 +40,7 @@ interface MockTripWithPlaces {
   startDate: number;
   endDate: number;
   coverImage: string;
-  status: string;
+  status: 'planning' | 'ongoing' | 'completed';
   createTime: number;
   updateTime: number;
   places: TripPlace[];
@@ -80,7 +83,8 @@ export class MockService {
   private static instance: MockService;
   private config: MockConfig | null = null;
 
-  private constructor() {}
+  private constructor() {
+  }
 
   public static getInstance(): MockService {
     if (!MockService.instance) {
@@ -100,16 +104,35 @@ export class MockService {
    * 检查指定模块是否启用 Mock
    */
   public isModuleEnabled(module: 'note' | 'trip' | 'place' | 'user' | 'ai' | 'map'): boolean {
-    if (!this.config?.enabled) return false;
-    return this.config.modules[module] ?? false;
+    if (!this.config?.enabled) {
+      return false;
+    }
+    switch (module) {
+      case 'note':
+        return this.config.modules.note ?? false;
+      case 'trip':
+        return this.config.modules.trip ?? false;
+      case 'place':
+        return this.config.modules.place ?? false;
+      case 'user':
+        return this.config.modules.user ?? false;
+      case 'ai':
+        return this.config.modules.ai ?? false;
+      case 'map':
+        return this.config.modules.map ?? false;
+      default:
+        return false;
+    }
   }
 
   /**
    * 异步初始化，从 rawfile 加载配置
    * @param resourceManager 资源管理器
    */
-  public async init(resourceManager: ResourceManager): Promise<void> {
-    if (configLoaded) return;
+  public async init(resourceManager: resourceManager.ResourceManager): Promise<void> {
+    if (configLoaded) {
+      return;
+    }
 
     try {
       const rawData: Uint8Array = await resourceManager.getRawFileContent('mock-config.json');
@@ -130,13 +153,20 @@ export class MockService {
       this.config = {
         enabled: false,
         baseUrl: '',
-        modules: { note: false, trip: false, place: false, user: false, ai: false, map: false },
+        modules: {
+          note: false,
+          trip: false,
+          place: false,
+          user: false,
+          ai: false,
+          map: false
+        } as MockModules,
         notes: [],
         trips: [],
         places: [],
         banners: [],
         notifications: []
-      };
+      } as MockConfig;
     }
   }
 
@@ -160,8 +190,26 @@ export class MockService {
   }
 
   public async insertNote(note: Note): Promise<number> {
-    const newId = mockNotes.length > 0 ? Math.max(...mockNotes.map(n => n.id ?? 0)) + 1 : 1;
-    const newNote: Note = { ...note, id: newId, createTime: Date.now(), updateTime: Date.now() };
+    let maxId = 0;
+    for (let i: number = 0; i < mockNotes.length; i++) {
+      const currentId: number = mockNotes[i].id ?? 0;
+      if (currentId > maxId) {
+        maxId = currentId;
+      }
+    }
+    const newId = mockNotes.length > 0 ? maxId + 1 : 1;
+    const newNote: Note = {
+      id: newId,
+      title: note.title,
+      location: note.location ?? '',
+      content: note.content,
+      category: note.category,
+      tags: note.tags,
+      isShared: note.isShared,
+      coverImage: note.coverImage,
+      createTime: Date.now(),
+      updateTime: Date.now()
+    };
     mockNotes.unshift(newNote);
     return newId;
   }
@@ -169,7 +217,18 @@ export class MockService {
   public async updateNote(note: Note): Promise<number> {
     const idx = mockNotes.findIndex(n => n.id === note.id);
     if (idx >= 0) {
-      mockNotes[idx] = { ...mockNotes[idx], ...note, updateTime: Date.now() };
+      mockNotes[idx] = {
+        id: mockNotes[idx].id,
+        title: note.title ?? mockNotes[idx].title,
+        location: note.location ?? mockNotes[idx].location,
+        content: note.content ?? mockNotes[idx].content,
+        category: note.category ?? mockNotes[idx].category,
+        tags: note.tags ?? mockNotes[idx].tags,
+        isShared: note.isShared ?? mockNotes[idx].isShared,
+        coverImage: note.coverImage ?? mockNotes[idx].coverImage,
+        createTime: mockNotes[idx].createTime,
+        updateTime: Date.now()
+      };
       return 1;
     }
     return 0;
@@ -187,7 +246,7 @@ export class MockService {
   // ==================== 行程 Mock ====================
 
   public async getTrips(limit?: number, offset?: number, keyword?: string, status?: string): Promise<Trip[]> {
-    let result: Trip[] = mockTrips.map(t => ({
+    let result: Trip[] = mockTrips.map((t: MockTripWithPlaces): Trip => ({
       id: t.id,
       name: t.name,
       location: t.location,
@@ -197,10 +256,10 @@ export class MockService {
       status: t.status,
       createTime: t.createTime,
       updateTime: t.updateTime
-    }));
-
+    } as Trip));
     if (keyword) {
-      result = result.filter(t => t.name?.includes(keyword) || t.location?.includes(keyword));
+      result =
+        result.filter((t: Trip): boolean => (t.name ?? '').includes(keyword) || (t.location ?? '').includes(keyword));
     }
     if (status && status !== 'all') {
       result = result.filter(t => t.status === status);
@@ -213,7 +272,9 @@ export class MockService {
 
   public async getTripWithPlaces(id: number): Promise<TripWithPlaces | null> {
     const trip = mockTrips.find(t => t.id === id);
-    if (!trip) return null;
+    if (!trip) {
+      return null;
+    }
     return {
       id: trip.id,
       name: trip.name,
@@ -233,9 +294,9 @@ export class MockService {
     const newTrip: MockTripWithPlaces = {
       id: newId,
       name: trip.name,
-      location: trip.location,
+      location: trip.location ?? '',
       startDate: trip.startDate ?? Date.now(),
-      endDate: trip.endDate,
+      endDate: trip.endDate ?? Date.now() + 86400000, // 默认加1天
       coverImage: trip.coverImage ?? '',
       status: trip.status ?? 'planning',
       createTime: Date.now(),
@@ -249,7 +310,18 @@ export class MockService {
   public async updateTrip(trip: Trip): Promise<number> {
     const idx = mockTrips.findIndex(t => t.id === trip.id);
     if (idx >= 0) {
-      mockTrips[idx] = { ...mockTrips[idx], ...trip, updateTime: Date.now() };
+      mockTrips[idx] = {
+        id: mockTrips[idx].id,
+        name: trip.name ?? mockTrips[idx].name,
+        location: trip.location ?? mockTrips[idx].location,
+        startDate: trip.startDate ?? mockTrips[idx].startDate,
+        endDate: trip.endDate ?? mockTrips[idx].endDate,
+        coverImage: trip.coverImage ?? mockTrips[idx].coverImage,
+        status: trip.status ?? mockTrips[idx].status,
+        createTime: mockTrips[idx].createTime,
+        updateTime: Date.now(),
+        places: mockTrips[idx].places
+      } as MockTripWithPlaces;
       return 1;
     }
     return 0;
@@ -268,15 +340,14 @@ export class MockService {
   }
 
   // ==================== 收藏地点 Mock ====================
-
   public async getSavedPlaces(): Promise<DbPlace[]> {
-    return mockPlaces.map(p => ({
+    return mockPlaces.map((p: MockPlace): DbPlace => ({
       id: p.id,
       title: p.title,
       type: p.type,
       distanceKm: p.distanceKm,
       durationMin: p.durationMin
-    }));
+    } as DbPlace));
   }
 
   // ==================== Banner Mock ====================

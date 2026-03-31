@@ -27,16 +27,13 @@ export class MyServiceWrapper {
    */
   private async wrapOperation<T>(opName: string, operation: () => Promise<T>): Promise<T> {
     Logger.debug('MyServiceWrapper', `开始操作: ${opName}`);
-    console.log(`[OP_START] 开始操作: ${opName}`);
     const startTime = Date.now();
     try {
       const result = await operation();
       Logger.debug('MyServiceWrapper', `操作成功: ${opName}, 耗时: ${Date.now() - startTime}ms`);
-      console.log(`[OP_SUCCESS] 操作成功: ${opName}, 耗时: ${Date.now() - startTime}ms`);
       return result;
     } catch (e) {
       Logger.error('MyServiceWrapper', `操作失败 ${opName}: ${e}`);
-      console.error(`[OP_FAILED] 操作失败 ${opName}:`, e);
       throw new Error(`操作失败: ${opName}`);
     }
   }

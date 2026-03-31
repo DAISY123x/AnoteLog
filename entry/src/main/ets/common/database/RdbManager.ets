@@ -48,7 +48,6 @@ export class RdbManager {
       await this.createTables();
     } catch (err) {
       Logger.error('RdbManager', `init RdbStore failed, code is ${err.code}, message is ${err.message}`);
-      console.error(`init RdbStore failed, code is ${err.code}, message is ${err.message}`);
     }
   }
 

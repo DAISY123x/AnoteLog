@@ -49,7 +49,6 @@ export class AuthService {
       }
     } catch (err) {
       Logger.error('AuthService', `Failed to get preferences: ${err}`);
-      console.error('AuthService: Failed to get preferences', err);
     }
   }
 
@@ -112,7 +111,6 @@ export class AuthService {
       return this.uint8ArrayToHex(result.data);
     } catch (err) {
       Logger.error('AuthService', `Hash error: ${err}`);
-      console.error('AuthService: Hash error', err);
       throw new Error('加密失败');
     }
   }

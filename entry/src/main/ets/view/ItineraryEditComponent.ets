@@ -60,7 +60,6 @@ export struct ItineraryEditComponent {
     this.mapCallback = (err, controller) => {
       if (err || !controller) {
         Logger.error('ItineraryEditComponent', `Map init failed: ${err}`);
-        console.error('Map init failed', err);
         this.isMapError = true;
         return;
       }

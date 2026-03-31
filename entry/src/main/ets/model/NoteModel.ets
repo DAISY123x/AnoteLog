@@ -9,4 +9,5 @@ export interface Note {
   coverImage?: string; // 封面图片名称
   category?: string;
   isShared?: boolean;
+  tags?: string[];
 }
