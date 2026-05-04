@@ -1,0 +1,26 @@
+{
+  "api": {
+    "enabled": true,
+    "baseUrl": "http://YOUR_BACKEND_SERVER:PORT",
+    "timeout": 30000
+  },
+  "ai": {
+    "provider": "deepseek",
+    "apiUrl": "https://api.deepseek.com/v1/chat/completions",
+    "model": "deepseek-chat",
+    "apiKey": "YOUR_DEEPSEEK_API_KEY",
+    "maxTokens": 500,
+    "temperature": 0.7,
+    "cacheTtlMinutes": 30
+  },
+  "map": {
+    "provider": "huawei",
+    "language": "zh-CN"
+  },
+  "weather": {
+    "provider": "gaode",
+    "language": "zh-CN",
+    "webKey": "YOUR_GAODE_WEB_KEY",
+    "defaultAdcode": "430400"
+  }
+}
